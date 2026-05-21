@@ -50,10 +50,10 @@ export function DashboardShell({
     <div className="flex min-h-screen bg-whiten">
       <Sidebar items={navItems} roleLabel={roleLabel} />
 
-      {/* Mobile drawer */}
+      {/* Mobile / tablet drawer */}
       <div
         className={
-          "fixed inset-0 z-40 md:hidden " +
+          "fixed inset-0 z-40 lg:hidden " +
           (open ? "" : "pointer-events-none")
         }
         aria-hidden={!open}
@@ -91,7 +91,7 @@ export function DashboardShell({
           onMenuClick={() => setOpen(true)}
           notificationBell={notificationBell}
         />
-        <main className="flex-1 px-4 py-4 sm:px-5 sm:py-6 md:px-8 md:py-8">
+        <main className="flex-1 px-4 py-4 sm:px-5 sm:py-6 lg:px-8 lg:py-8">
           <Breadcrumbs />
           {children}
         </main>
