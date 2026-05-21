@@ -1,0 +1,225 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import mongoose from "mongoose";
+import { connectDB } from "@/lib/db";
+import { User } from "@/models/User";
+import { requireAdminScope } from "@/lib/admin-scope";
+import { DEFAULT_PASSWORD } from "@/lib/constants";
+import {
+  lecturerCreateSchema,
+  lecturerUpdateSchema,
+} from "@/lib/validators";
+import {
+  mongoDuplicateMessage,
+  zodToError,
+  type FormState,
+} from "@/lib/form-state";
+import {
+  processCsvImport,
+  type BulkImportState,
+} from "@/lib/bulk-import";
+import { audit } from "@/lib/audit";
+
+export type { BulkImportState } from "@/lib/bulk-import";
+
+export async function createLecturerAction(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const me = await requireAdminScope();
+
+  const parsed = lecturerCreateSchema.safeParse({
+    name: formData.get("name"),
+    email: formData.get("email"),
+    department: me.department,
+    staffId: formData.get("staffId"),
+  });
+  if (!parsed.success) return { ok: false, error: zodToError(parsed.error) };
+
+  await connectDB();
+  let createdId: string;
+  try {
+    const doc = await User.create({
+      name: parsed.data.name,
+      email: parsed.data.email,
+      department: me.department,
+      staffId: parsed.data.staffId || undefined,
+      role: "lecturer",
+      password: DEFAULT_PASSWORD,
+      isActive: true,
+      mustChangePassword: true,
+    });
+    createdId = String(doc._id);
+  } catch (err) {
+    const dup = mongoDuplicateMessage(err);
+    if (dup) return { ok: false, error: dup };
+    return { ok: false, error: "Could not create lecturer." };
+  }
+
+  await audit({
+    action: "lecturer.create",
+    summary: `Created lecturer ${parsed.data.name} (${parsed.data.email})`,
+    entityType: "User",
+    entityId: createdId,
+  });
+  revalidatePath("/admin/lecturers");
+  revalidatePath("/admin");
+  redirect("/admin/lecturers");
+}
+
+export async function updateLecturerAction(
+  id: string,
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const me = await requireAdminScope();
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return { ok: false, error: "Invalid lecturer id." };
+  }
+
+  const parsed = lecturerUpdateSchema.safeParse({
+    name: formData.get("name"),
+    email: formData.get("email"),
+    department: me.department,
+    staffId: formData.get("staffId"),
+    isActive: formData.get("isActive") === "on",
+    mustChangePassword: formData.get("mustChangePassword") === "on",
+  });
+  if (!parsed.success) return { ok: false, error: zodToError(parsed.error) };
+
+  await connectDB();
+  try {
+    const updated = await User.findOneAndUpdate(
+      { _id: id, role: "lecturer", department: me.department },
+      {
+        $set: {
+          name: parsed.data.name,
+          email: parsed.data.email,
+          staffId: parsed.data.staffId || undefined,
+          isActive: parsed.data.isActive,
+          mustChangePassword: parsed.data.mustChangePassword,
+        },
+      },
+      { new: true },
+    );
+    if (!updated) return { ok: false, error: "Lecturer not found." };
+  } catch (err) {
+    const dup = mongoDuplicateMessage(err);
+    if (dup) return { ok: false, error: dup };
+    return { ok: false, error: "Could not update lecturer." };
+  }
+
+  await audit({
+    action: "lecturer.update",
+    summary: `Updated lecturer ${parsed.data.name} (${parsed.data.email})`,
+    entityType: "User",
+    entityId: id,
+    metadata: { isActive: parsed.data.isActive },
+  });
+  revalidatePath("/admin/lecturers");
+  revalidatePath(`/admin/lecturers/${id}`);
+  return { ok: true, message: "Lecturer updated." };
+}
+
+export async function toggleLecturerActiveAction(id: string): Promise<void> {
+  const me = await requireAdminScope();
+  if (!mongoose.Types.ObjectId.isValid(id)) return;
+  await connectDB();
+  const user = await User.findOne({
+    _id: id,
+    role: "lecturer",
+    department: me.department,
+  });
+  if (!user) return;
+  user.isActive = !user.isActive;
+  await user.save();
+  await audit({
+    action: user.isActive ? "lecturer.activate" : "lecturer.deactivate",
+    summary: `${user.isActive ? "Activated" : "Deactivated"} lecturer ${user.name} (${user.email})`,
+    entityType: "User",
+    entityId: id,
+  });
+  revalidatePath("/admin/lecturers");
+}
+
+export async function resetLecturerPasswordAction(id: string): Promise<void> {
+  const me = await requireAdminScope();
+  if (!mongoose.Types.ObjectId.isValid(id)) return;
+  await connectDB();
+  const user = await User.findOne({
+    _id: id,
+    role: "lecturer",
+    department: me.department,
+  });
+  if (!user) return;
+  user.password = DEFAULT_PASSWORD;
+  user.mustChangePassword = true;
+  await user.save();
+  await audit({
+    action: "lecturer.password.reset",
+    summary: `Reset password for lecturer ${user.name} (${user.email})`,
+    entityType: "User",
+    entityId: id,
+  });
+  revalidatePath("/admin/lecturers");
+}
+
+export async function bulkImportLecturersAction(
+  _prev: BulkImportState,
+  formData: FormData,
+): Promise<BulkImportState> {
+  const me = await requireAdminScope();
+
+  const state = await processCsvImport({
+    formData,
+    requiredColumns: ["name", "email"],
+    processRow: (r) => {
+      const parsed = lecturerCreateSchema.safeParse({
+        name: r.name,
+        email: r.email,
+        department: me.department, // forced server-side
+        staffId: r.staffid ?? r.staffId ?? "",
+      });
+      if (!parsed.success) {
+        return {
+          action: "fail",
+          email: r.email ?? "",
+          reason: zodToError(parsed.error),
+        };
+      }
+      return {
+        action: "create",
+        email: parsed.data.email,
+        doc: {
+          name: parsed.data.name,
+          email: parsed.data.email,
+          department: me.department,
+          staffId: parsed.data.staffId || undefined,
+          role: "lecturer",
+          password: DEFAULT_PASSWORD,
+          isActive: true,
+          mustChangePassword: true,
+        },
+      };
+    },
+  });
+
+  if (state?.ok) {
+    revalidatePath("/admin/lecturers");
+    revalidatePath("/admin");
+    const r = state.result;
+    await audit({
+      action: "lecturer.bulk_import",
+      summary: `Bulk-imported lecturers: ${r.created} created, ${r.skipped.length} skipped, ${r.failed.length} failed`,
+      entityType: "User",
+      metadata: {
+        created: r.created,
+        skipped: r.skipped.length,
+        failed: r.failed.length,
+      },
+    });
+  }
+  return state;
+}

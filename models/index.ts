@@ -1,0 +1,34 @@
+export { User } from "./User";
+export type { IUser, IUserMethods, UserModel, UserRole } from "./User";
+
+export { Course } from "./Course";
+export type { ICourse, Semester } from "./Course";
+
+export { Programme } from "./Programme";
+export type { IProgramme } from "./Programme";
+
+export { Attendance } from "./Attendance";
+export type { IAttendance, AttendanceStatus } from "./Attendance";
+
+export { Grade } from "./Grade";
+export type { IGrade, SubmissionStatus } from "./Grade";
+
+export { GradingRule } from "./GradingRule";
+export type { IGradingRule, IGradeBand } from "./GradingRule";
+
+export { AcademicPeriod } from "./AcademicPeriod";
+export type { IAcademicPeriod } from "./AcademicPeriod";
+
+export { AuditLog } from "./AuditLog";
+export type { IAuditLog, AuditActorRole } from "./AuditLog";
+
+export { Notification } from "./Notification";
+export type { INotification, NotificationChannel } from "./Notification";
+
+export { AccessPayment } from "./AccessPayment";
+export type {
+  IAccessPayment,
+  AccessPaymentMethod,
+  AccessPaymentChannel,
+  AccessPaymentStatus,
+} from "./AccessPayment";
