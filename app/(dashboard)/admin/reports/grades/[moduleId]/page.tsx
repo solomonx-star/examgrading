@@ -1,10 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireAdminScope } from "@/lib/admin-scope";
-import {
-  loadCourseForDepartment,
-  loadGradeReportRows,
-} from "@/lib/report-data";
+import { loadCourseHeader, loadGradeReportRows } from "@/lib/report-data";
 import { getEffectiveGradingRule } from "@/lib/grading-server";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { PrintButton } from "@/components/ui/PrintButton";
@@ -17,9 +14,9 @@ export default async function GradeReportViewPage({
 }: {
   params: Promise<{ moduleId: string }>;
 }) {
-  const me = await requireAdminScope();
+  await requireAdminScope();
   const { moduleId } = await params;
-  const mod = await loadCourseForDepartment(moduleId, me.department);
+  const mod = await loadCourseHeader(moduleId);
   if (!mod) notFound();
 
   const [rows, rule] = await Promise.all([

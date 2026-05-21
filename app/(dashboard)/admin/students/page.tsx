@@ -13,17 +13,16 @@ export default async function StudentsPage({
 }: {
   searchParams: Promise<{ q?: string; programme?: string; year?: string }>;
 }) {
-  const me = await requireAdminScope();
+  await requireAdminScope();
   const sp = await searchParams;
   const q = (sp.q ?? "").trim();
 
   await connectDB();
 
-  const programmes = await Programme.find({ department: me.department })
+  const programmes = await Programme.find({})
     .select("name code")
     .sort({ name: 1 })
     .lean();
-  const programmeIdsInDept = programmes.map((p) => p._id);
   const programmeMap = new Map(
     programmes.map((p) => [
       String(p._id),
@@ -33,14 +32,9 @@ export default async function StudentsPage({
 
   const filter: Record<string, unknown> = {
     role: "student",
-    department: me.department,
   };
   if (sp.programme && /^[a-f\d]{24}$/i.test(sp.programme)) {
     filter.programmeId = sp.programme;
-  } else if (programmeIdsInDept.length > 0) {
-    // Constrain to students attached to dept programmes (also catches the
-    // legacy case of students without a programme — those won't appear)
-    filter.programmeId = { $in: programmeIdsInDept };
   }
   if (sp.year && /^[1-4]$/.test(sp.year)) {
     filter.yearLevel = Number(sp.year);
@@ -58,7 +52,7 @@ export default async function StudentsPage({
     <div>
       <PageHeader
         title="Students"
-        description={`Department: ${me.department}`}
+        description="All students on the platform"
         action={{ href: "/admin/students/new", label: "New student" }}
         secondaryAction={{
           href: "/admin/students/import",

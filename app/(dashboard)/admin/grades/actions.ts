@@ -31,14 +31,9 @@ async function moduleIdsForCohort(
   return modules.map((m) => m._id);
 }
 
-async function assertCohortInDept(
-  programmeId: string,
-  department: string,
-): Promise<boolean> {
+async function programmeExists(programmeId: string): Promise<boolean> {
   if (!mongoose.Types.ObjectId.isValid(programmeId)) return false;
-  const p = await Programme.findOne({ _id: programmeId, department })
-    .select("_id")
-    .lean();
+  const p = await Programme.findOne({ _id: programmeId }).select("_id").lean();
   return !!p;
 }
 
@@ -67,8 +62,8 @@ export async function publishStudentGradesAction(args: {
   if (!parsed.success) return { ok: false, error: "Invalid input." };
 
   await connectDB();
-  if (!(await assertCohortInDept(parsed.data.programmeId, me.department))) {
-    return { ok: false, error: "Programme is not in your department." };
+  if (!(await programmeExists(parsed.data.programmeId))) {
+    return { ok: false, error: "Programme does not exist." };
   }
 
   // Confirm the student is in the cohort
@@ -165,8 +160,8 @@ export async function unpublishStudentGradesAction(args: {
   if (!parsed.success) return { ok: false, error: "Invalid input." };
 
   await connectDB();
-  if (!(await assertCohortInDept(parsed.data.programmeId, me.department))) {
-    return { ok: false, error: "Programme is not in your department." };
+  if (!(await programmeExists(parsed.data.programmeId))) {
+    return { ok: false, error: "Programme does not exist." };
   }
   const moduleIds = await moduleIdsForCohort(
     parsed.data.programmeId,
@@ -230,8 +225,8 @@ export async function publishCohortGradesAction(args: {
   if (!parsed.success) return { ok: false, error: "Invalid input." };
 
   await connectDB();
-  if (!(await assertCohortInDept(parsed.data.programmeId, me.department))) {
-    return { ok: false, error: "Programme is not in your department." };
+  if (!(await programmeExists(parsed.data.programmeId))) {
+    return { ok: false, error: "Programme does not exist." };
   }
   const moduleIds = await moduleIdsForCohort(
     parsed.data.programmeId,

@@ -7,12 +7,9 @@ import { NewStudentForm } from "./new-student-form";
 export const dynamic = "force-dynamic";
 
 export default async function NewStudentPage() {
-  const me = await requireAdminScope();
+  await requireAdminScope();
   await connectDB();
-  const programmes = await Programme.find({
-    department: me.department,
-    isActive: true,
-  })
+  const programmes = await Programme.find({ isActive: true })
     .select("name code")
     .sort({ name: 1 })
     .lean();
@@ -21,7 +18,7 @@ export default async function NewStudentPage() {
     <div>
       <PageHeader
         title="New student"
-        description={`Department: ${me.department}. ID is generated automatically (IAMCO-YYYY-NNNN).`}
+        description="ID is generated automatically (IAMCO-YYYY-NNNN)."
       />
       <NewStudentForm
         programmes={programmes.map((p) => ({

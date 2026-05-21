@@ -22,14 +22,11 @@ export default async function AdminGradesPage({
     semester?: string;
   }>;
 }) {
-  const me = await requireAdminScope();
+  await requireAdminScope();
   const sp = await searchParams;
 
   await connectDB();
-  const programmes = await Programme.find({
-    department: me.department,
-    isActive: true,
-  })
+  const programmes = await Programme.find({ isActive: true })
     .select("name code")
     .sort({ name: 1 })
     .lean();
@@ -65,7 +62,7 @@ export default async function AdminGradesPage({
     <div>
       <PageHeader
         title="Grade reviews"
-        description={`Department: ${me.department}. Pick a cohort, review submitted grades, then publish.`}
+        description="Pick a cohort, review submitted grades, then publish."
       />
 
       <form className="mb-6 grid grid-cols-1 gap-3 rounded-2xl border border-stroke bg-white p-4 shadow-sm sm:grid-cols-2 sm:items-end lg:grid-cols-[2fr_1fr_1fr_1fr_auto]">

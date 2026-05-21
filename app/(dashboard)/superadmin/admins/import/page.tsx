@@ -13,7 +13,7 @@ export default async function AdminBulkImportPage() {
     <div>
       <PageHeader
         title="Bulk import admins"
-        description={`Upload a CSV with columns "name, email, department" (staffId optional).`}
+        description={`Upload a CSV with columns "name, email" (staffId optional).`}
       />
       <ImportForm />
     </div>

@@ -14,7 +14,7 @@ export default async function EditStudentPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const me = await requireAdminScope();
+  await requireAdminScope();
   const { id } = await params;
   if (!mongoose.Types.ObjectId.isValid(id)) notFound();
 
@@ -22,14 +22,10 @@ export default async function EditStudentPage({
   const student = await User.findOne({
     _id: id,
     role: "student",
-    department: me.department,
   }).lean();
   if (!student) notFound();
 
-  const programmes = await Programme.find({
-    department: me.department,
-    isActive: true,
-  })
+  const programmes = await Programme.find({ isActive: true })
     .select("name code")
     .sort({ name: 1 })
     .lean();

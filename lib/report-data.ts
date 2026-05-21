@@ -19,9 +19,8 @@ export type CourseHeader = {
   semester: "First" | "Second" | "Summer";
 };
 
-export async function loadCourseForDepartment(
+export async function loadCourseHeader(
   courseId: string,
-  department: string,
 ): Promise<CourseHeader | null> {
   if (!mongoose.Types.ObjectId.isValid(courseId)) return null;
   await connectDB();
@@ -29,18 +28,16 @@ export async function loadCourseForDepartment(
     .select("code name programmeId yearLevel academicYear semester")
     .lean();
   if (!mod) return null;
-  // Department scoping: derive from the parent programme.
   const programme = await Programme.findById(mod.programmeId)
-    .select("name code department")
+    .select("name code")
     .lean();
-  if (!programme || programme.department !== department) return null;
   return {
     id: String(mod._id),
     code: mod.code,
     name: mod.name,
     programmeId: String(mod.programmeId),
-    programmeName: programme.name,
-    programmeCode: programme.code,
+    programmeName: programme?.name ?? null,
+    programmeCode: programme?.code ?? null,
     yearLevel: mod.yearLevel,
     academicYear: mod.academicYear,
     semester: mod.semester,

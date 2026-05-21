@@ -13,12 +13,12 @@ export default async function ProgrammesPage({
 }: {
   searchParams: Promise<{ q?: string }>;
 }) {
-  const me = await requireAdminScope();
+  await requireAdminScope();
   const sp = await searchParams;
   const q = (sp.q ?? "").trim();
 
   await connectDB();
-  const filter: Record<string, unknown> = { department: me.department };
+  const filter: Record<string, unknown> = {};
   if (q) {
     const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
     filter.$or = [{ name: re }, { code: re }];
@@ -44,7 +44,7 @@ export default async function ProgrammesPage({
     <div>
       <PageHeader
         title="Programmes"
-        description={`Department: ${me.department}`}
+        description="All programmes on the platform"
         action={{ href: "/admin/programmes/new", label: "New programme" }}
       />
 

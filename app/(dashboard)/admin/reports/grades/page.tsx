@@ -15,14 +15,11 @@ export default async function GradeReportPickerPage({
 }: {
   searchParams: Promise<{ programmeId?: string; yearLevel?: string }>;
 }) {
-  const me = await requireAdminScope();
+  await requireAdminScope();
   const sp = await searchParams;
   await connectDB();
 
-  const programmes = await Programme.find({
-    department: me.department,
-    isActive: true,
-  })
+  const programmes = await Programme.find({ isActive: true })
     .select("name code")
     .sort({ name: 1 })
     .lean();
@@ -37,7 +34,7 @@ export default async function GradeReportPickerPage({
     sp.yearLevel && /^\d$/.test(sp.yearLevel) ? Number(sp.yearLevel) : null;
   const selectedProgrammeId = sp.programmeId ?? "";
 
-  const filter: Record<string, unknown> = { department: me.department };
+  const filter: Record<string, unknown> = {};
   if (selectedProgrammeId) filter.programmeId = selectedProgrammeId;
   if (yearLevelNum) filter.yearLevel = yearLevelNum;
 

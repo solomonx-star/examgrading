@@ -25,14 +25,9 @@ import { audit } from "@/lib/audit";
 
 export type { BulkImportState } from "@/lib/bulk-import";
 
-async function programmeInDept(
-  programmeId: string,
-  department: string,
-): Promise<boolean> {
+async function programmeExists(programmeId: string): Promise<boolean> {
   if (!mongoose.Types.ObjectId.isValid(programmeId)) return false;
-  const p = await Programme.findOne({ _id: programmeId, department })
-    .select("_id")
-    .lean();
+  const p = await Programme.findOne({ _id: programmeId }).select("_id").lean();
   return !!p;
 }
 
@@ -40,20 +35,19 @@ export async function createStudentAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const me = await requireAdminScope();
+  await requireAdminScope();
 
   const parsed = studentCreateSchema.safeParse({
     name: formData.get("name"),
     email: formData.get("email"),
     programmeId: formData.get("programmeId"),
     yearLevel: formData.get("yearLevel"),
-    department: me.department, // force admin's department
   });
   if (!parsed.success) return { ok: false, error: zodToError(parsed.error) };
 
   await connectDB();
-  if (!(await programmeInDept(parsed.data.programmeId, me.department))) {
-    return { ok: false, error: "Selected programme is not in your department." };
+  if (!(await programmeExists(parsed.data.programmeId))) {
+    return { ok: false, error: "Selected programme does not exist." };
   }
 
   let createdId: string;
@@ -63,7 +57,6 @@ export async function createStudentAction(
       email: parsed.data.email,
       programmeId: parsed.data.programmeId,
       yearLevel: parsed.data.yearLevel,
-      department: me.department,
       role: "student",
       password: DEFAULT_PASSWORD,
       isActive: true,
@@ -93,7 +86,7 @@ export async function updateStudentAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const me = await requireAdminScope();
+  await requireAdminScope();
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return { ok: false, error: "Invalid student id." };
   }
@@ -103,20 +96,19 @@ export async function updateStudentAction(
     email: formData.get("email"),
     programmeId: formData.get("programmeId"),
     yearLevel: formData.get("yearLevel"),
-    department: me.department,
     isActive: formData.get("isActive") === "on",
     mustChangePassword: formData.get("mustChangePassword") === "on",
   });
   if (!parsed.success) return { ok: false, error: zodToError(parsed.error) };
 
   await connectDB();
-  if (!(await programmeInDept(parsed.data.programmeId, me.department))) {
-    return { ok: false, error: "Selected programme is not in your department." };
+  if (!(await programmeExists(parsed.data.programmeId))) {
+    return { ok: false, error: "Selected programme does not exist." };
   }
 
   try {
     const updated = await User.findOneAndUpdate(
-      { _id: id, role: "student", department: me.department },
+      { _id: id, role: "student" },
       {
         $set: {
           name: parsed.data.name,
@@ -149,14 +141,10 @@ export async function updateStudentAction(
 }
 
 export async function toggleStudentActiveAction(id: string): Promise<void> {
-  const me = await requireAdminScope();
+  await requireAdminScope();
   if (!mongoose.Types.ObjectId.isValid(id)) return;
   await connectDB();
-  const user = await User.findOne({
-    _id: id,
-    role: "student",
-    department: me.department,
-  });
+  const user = await User.findOne({ _id: id, role: "student" });
   if (!user) return;
   user.isActive = !user.isActive;
   await user.save();
@@ -170,14 +158,10 @@ export async function toggleStudentActiveAction(id: string): Promise<void> {
 }
 
 export async function resetStudentPasswordAction(id: string): Promise<void> {
-  const me = await requireAdminScope();
+  await requireAdminScope();
   if (!mongoose.Types.ObjectId.isValid(id)) return;
   await connectDB();
-  const user = await User.findOne({
-    _id: id,
-    role: "student",
-    department: me.department,
-  });
+  const user = await User.findOne({ _id: id, role: "student" });
   if (!user) return;
   user.password = DEFAULT_PASSWORD;
   user.mustChangePassword = true;
@@ -195,13 +179,11 @@ export async function bulkImportStudentsAction(
   _prev: BulkImportState,
   formData: FormData,
 ): Promise<BulkImportState> {
-  const me = await requireAdminScope();
+  await requireAdminScope();
 
   // Pre-fetch the programme code → ObjectId map ONCE, not per row.
   await connectDB();
-  const programmes = await Programme.find({ department: me.department })
-    .select("code")
-    .lean();
+  const programmes = await Programme.find({}).select("code").lean();
   const programmeIdByCode = new Map<string, string>(
     programmes.map((p) => [p.code.toUpperCase(), String(p._id)]),
   );
@@ -216,7 +198,7 @@ export async function bulkImportStudentsAction(
         return {
           action: "fail",
           email: r.email ?? "",
-          reason: `Programme code "${code}" not found in your department.`,
+          reason: `Programme code "${code}" not found.`,
         };
       }
 
@@ -225,7 +207,6 @@ export async function bulkImportStudentsAction(
         email: r.email,
         programmeId,
         yearLevel: r.yearlevel,
-        department: me.department,
       });
       if (!parsed.success) {
         return {
@@ -242,7 +223,6 @@ export async function bulkImportStudentsAction(
           email: parsed.data.email,
           programmeId: parsed.data.programmeId,
           yearLevel: parsed.data.yearLevel,
-          department: me.department,
           role: "student",
           password: DEFAULT_PASSWORD,
           isActive: true,

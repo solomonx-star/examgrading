@@ -14,7 +14,7 @@ export default async function EditLecturerPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const me = await requireAdminScope();
+  await requireAdminScope();
   const { id } = await params;
   if (!mongoose.Types.ObjectId.isValid(id)) notFound();
 
@@ -22,7 +22,6 @@ export default async function EditLecturerPage({
   const lecturer = await User.findOne({
     _id: id,
     role: "lecturer",
-    department: me.department,
   }).lean();
   if (!lecturer) notFound();
 

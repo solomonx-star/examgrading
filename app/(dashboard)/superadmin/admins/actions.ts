@@ -41,7 +41,6 @@ export async function createAdminAction(
   const parsed = adminCreateSchema.safeParse({
     name: formData.get("name"),
     email: formData.get("email"),
-    department: formData.get("department"),
     staffId: formData.get("staffId"),
   });
   if (!parsed.success) return { ok: false, error: zodToError(parsed.error) };
@@ -52,7 +51,6 @@ export async function createAdminAction(
     const doc = await User.create({
       name: parsed.data.name,
       email: parsed.data.email,
-      department: parsed.data.department,
       staffId: parsed.data.staffId || undefined,
       role: "admin",
       password: DEFAULT_PASSWORD,
@@ -68,10 +66,9 @@ export async function createAdminAction(
 
   await audit({
     action: "admin.create",
-    summary: `Created admin ${parsed.data.name} (${parsed.data.email}) in ${parsed.data.department}`,
+    summary: `Created admin ${parsed.data.name} (${parsed.data.email})`,
     entityType: "User",
     entityId: createdId,
-    metadata: { department: parsed.data.department },
   });
   revalidatePath("/superadmin/admins");
   revalidatePath("/superadmin");
@@ -91,7 +88,6 @@ export async function updateAdminAction(
   const parsed = adminUpdateSchema.safeParse({
     name: formData.get("name"),
     email: formData.get("email"),
-    department: formData.get("department"),
     staffId: formData.get("staffId"),
     isActive: formData.get("isActive") === "on",
     mustChangePassword: formData.get("mustChangePassword") === "on",
@@ -106,7 +102,6 @@ export async function updateAdminAction(
         $set: {
           name: parsed.data.name,
           email: parsed.data.email,
-          department: parsed.data.department,
           staffId: parsed.data.staffId || undefined,
           isActive: parsed.data.isActive,
           mustChangePassword: parsed.data.mustChangePassword,
@@ -126,7 +121,7 @@ export async function updateAdminAction(
     summary: `Updated admin ${parsed.data.name} (${parsed.data.email})`,
     entityType: "User",
     entityId: id,
-    metadata: { department: parsed.data.department, isActive: parsed.data.isActive },
+    metadata: { isActive: parsed.data.isActive },
   });
   revalidatePath("/superadmin/admins");
   revalidatePath(`/superadmin/admins/${id}`);
@@ -156,7 +151,7 @@ export async function resetAdminPasswordAction(id: string): Promise<void> {
   await connectDB();
   const user = await User.findOne({ _id: id, role: "admin" });
   if (!user) return;
-  user.password = DEFAULT_PASSWORD; // pre-save hook re-hashes
+  user.password = DEFAULT_PASSWORD;
   user.mustChangePassword = true;
   await user.save();
   await audit({
@@ -176,12 +171,11 @@ export async function bulkImportAdminsAction(
 
   const state = await processCsvImport({
     formData,
-    requiredColumns: ["name", "email", "department"],
+    requiredColumns: ["name", "email"],
     processRow: (r) => {
       const parsed = adminCreateSchema.safeParse({
         name: r.name,
         email: r.email,
-        department: r.department,
         staffId: r.staffid ?? r.staffId ?? "",
       });
       if (!parsed.success) {
@@ -197,7 +191,6 @@ export async function bulkImportAdminsAction(
         doc: {
           name: parsed.data.name,
           email: parsed.data.email,
-          department: parsed.data.department,
           staffId: parsed.data.staffId || undefined,
           role: "admin",
           password: DEFAULT_PASSWORD,

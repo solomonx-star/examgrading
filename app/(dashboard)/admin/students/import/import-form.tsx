@@ -23,10 +23,9 @@ export function ImportForm() {
           One row per student. Required columns: <code>name</code>,{" "}
           <code>email</code>, <code>programme</code> (programme{" "}
           <strong>code</strong>, e.g. <code>BSCCS</code>),{" "}
-          <code>yearLevel</code> (1–4). Department is set automatically from
-          your account. Each new student gets the default password{" "}
-          <code>iamco1234</code> and is forced to change it on first login.
-          Maximum 500 rows per file.
+          <code>yearLevel</code> (1–4). Each new student gets the default
+          password <code>iamco1234</code> and is forced to change it on first
+          login. Maximum 500 rows per file.
         </>
       }
     />

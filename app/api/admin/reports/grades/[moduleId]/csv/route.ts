@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdminScope } from "@/lib/admin-scope";
-import { loadCourseForDepartment, loadGradeReportRows } from "@/lib/report-data";
+import { loadCourseHeader, loadGradeReportRows } from "@/lib/report-data";
 import { getEffectiveGradingRule } from "@/lib/grading-server";
 import { safeFilename, toCsv } from "@/lib/csv";
 
@@ -11,9 +11,9 @@ export async function GET(
   _req: Request,
   ctx: { params: Promise<{ moduleId: string }> },
 ) {
-  const me = await requireAdminScope();
+  await requireAdminScope();
   const { moduleId } = await ctx.params;
-  const mod = await loadCourseForDepartment(moduleId, me.department);
+  const mod = await loadCourseHeader(moduleId);
   if (!mod) {
     return NextResponse.json({ error: "Module not found" }, { status: 404 });
   }

@@ -16,7 +16,7 @@ export default async function EditCoursePage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const me = await requireAdminScope();
+  await requireAdminScope();
   const { id } = await params;
   if (!mongoose.Types.ObjectId.isValid(id)) notFound();
 
@@ -24,22 +24,21 @@ export default async function EditCoursePage({
   const mod = await Course.findById(id).lean();
   if (!mod) notFound();
 
-  // Department scoping via parent programme
   const programme = await Programme.findById(mod.programmeId)
-    .select("department name code")
+    .select("name code")
     .lean();
-  if (!programme || programme.department !== me.department) notFound();
+  if (!programme) notFound();
 
   const [programmes, lecturers, students, rules] = await Promise.all([
-    Programme.find({ department: me.department, isActive: true })
+    Programme.find({ isActive: true })
       .select("name code")
       .sort({ name: 1 })
       .lean(),
-    User.find({ role: "lecturer", department: me.department, isActive: true })
+    User.find({ role: "lecturer", isActive: true })
       .select("name email")
       .sort({ name: 1 })
       .lean(),
-    User.find({ role: "student", department: me.department })
+    User.find({ role: "student" })
       .select("name studentId programmeId yearLevel isActive")
       .sort({ name: 1 })
       .lean(),

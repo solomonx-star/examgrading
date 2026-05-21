@@ -27,31 +27,23 @@ function pickEnrolled(formData: FormData): string[] {
 }
 
 /**
- * Cross-checks: programme must belong to admin's department, lecturer must be
- * in the same department, and every selected student must be in the same
- * programme AND year level as the course (so a Year 2 student can't be
- * dropped into a Year 1 course).
+ * Cross-checks: programme + lecturer must exist; every enrolled student must
+ * be in the same programme + year level as the course.
  */
-async function validateProgrammeRefs(
-  department: string,
+async function validateRefs(
   programmeId: string,
   yearLevel: number,
   lecturerId: string | undefined,
   enrolled: string[],
 ): Promise<string | null> {
-  const programme = await Programme.findOne({
-    _id: programmeId,
-    department,
-  }).select("_id").lean();
-  if (!programme) return "Selected programme is not in your department.";
+  const programme = await Programme.findOne({ _id: programmeId })
+    .select("_id")
+    .lean();
+  if (!programme) return "Selected programme does not exist.";
 
   if (lecturerId) {
-    const ok = await User.exists({
-      _id: lecturerId,
-      role: "lecturer",
-      department,
-    });
-    if (!ok) return "Selected lecturer is not in your department.";
+    const ok = await User.exists({ _id: lecturerId, role: "lecturer" });
+    if (!ok) return "Selected lecturer does not exist.";
   }
 
   if (enrolled.length) {
@@ -72,7 +64,7 @@ export async function createCourseAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const me = await requireAdminScope();
+  await requireAdminScope();
 
   const parsed = courseCreateSchema.safeParse({
     name: formData.get("name"),
@@ -88,8 +80,7 @@ export async function createCourseAction(
   if (!parsed.success) return { ok: false, error: zodToError(parsed.error) };
 
   await connectDB();
-  const scopeErr = await validateProgrammeRefs(
-    me.department,
+  const scopeErr = await validateRefs(
     parsed.data.programmeId,
     parsed.data.yearLevel,
     parsed.data.lecturerId || undefined,
@@ -109,7 +100,6 @@ export async function createCourseAction(
       lecturerId: parsed.data.lecturerId || undefined,
       gradingRuleId: parsed.data.gradingRuleId || undefined,
       enrolledStudents: parsed.data.enrolledStudents,
-      department: me.department,
       isActive: true,
     });
     createdId = String(doc._id);
@@ -136,7 +126,7 @@ export async function updateCourseAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const me = await requireAdminScope();
+  await requireAdminScope();
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return { ok: false, error: "Invalid module id." };
   }
@@ -156,26 +146,13 @@ export async function updateCourseAction(
   if (!parsed.success) return { ok: false, error: zodToError(parsed.error) };
 
   await connectDB();
-  const scopeErr = await validateProgrammeRefs(
-    me.department,
+  const scopeErr = await validateRefs(
     parsed.data.programmeId,
     parsed.data.yearLevel,
     parsed.data.lecturerId || undefined,
     parsed.data.enrolledStudents,
   );
   if (scopeErr) return { ok: false, error: scopeErr };
-
-  // Verify the course currently in DB also belongs to a programme in this dept
-  const existing = await Course.findById(id)
-    .populate({ path: "programmeId", select: "department" })
-    .lean();
-  if (!existing) return { ok: false, error: "Module not found." };
-  const existingProgramme = existing.programmeId as unknown as
-    | { department?: string }
-    | null;
-  if (existingProgramme?.department !== me.department) {
-    return { ok: false, error: "Module not found." };
-  }
 
   try {
     const updated = await Course.findOneAndUpdate(
@@ -216,14 +193,11 @@ export async function updateCourseAction(
 }
 
 export async function toggleCourseActiveAction(id: string): Promise<void> {
-  const me = await requireAdminScope();
+  await requireAdminScope();
   if (!mongoose.Types.ObjectId.isValid(id)) return;
   await connectDB();
-  const mod = await Course.findById(id)
-    .populate({ path: "programmeId", select: "department" });
+  const mod = await Course.findById(id);
   if (!mod) return;
-  const programme = mod.programmeId as unknown as { department?: string } | null;
-  if (programme?.department !== me.department) return;
   mod.isActive = !mod.isActive;
   await mod.save();
   await audit({

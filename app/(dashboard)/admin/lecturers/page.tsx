@@ -13,14 +13,13 @@ export default async function LecturersPage({
 }: {
   searchParams: Promise<{ q?: string }>;
 }) {
-  const me = await requireAdminScope();
+  await requireAdminScope();
   const sp = await searchParams;
   const q = (sp.q ?? "").trim();
 
   await connectDB();
   const filter: Record<string, unknown> = {
     role: "lecturer",
-    department: me.department,
   };
   if (q) {
     const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
@@ -45,7 +44,7 @@ export default async function LecturersPage({
     <div>
       <PageHeader
         title="Lecturers"
-        description={`Department: ${me.department}`}
+        description="All lecturers on the platform"
         action={{ href: "/admin/lecturers/new", label: "New lecturer" }}
         secondaryAction={{
           href: "/admin/lecturers/import",

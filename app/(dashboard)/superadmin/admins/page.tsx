@@ -25,7 +25,7 @@ export default async function AdminsPage({
   const filter: Record<string, unknown> = { role: "admin" };
   if (q) {
     const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
-    filter.$or = [{ name: re }, { email: re }, { department: re }];
+    filter.$or = [{ name: re }, { email: re }, { staffId: re }];
   }
   const admins = await User.find(filter)
     .sort({ createdAt: -1 })
@@ -36,7 +36,7 @@ export default async function AdminsPage({
     <div>
       <PageHeader
         title="Admins"
-        description="Manage administrator accounts across institutions."
+        description="Manage administrator accounts."
         action={{ href: "/superadmin/admins/new", label: "New admin" }}
         secondaryAction={{
           href: "/superadmin/admins/import",
@@ -49,7 +49,7 @@ export default async function AdminsPage({
           <input
             name="q"
             defaultValue={q}
-            placeholder="Search by name, email, or department"
+            placeholder="Search by name, email, or staff ID"
             className="block w-full rounded-lg border border-stroke bg-white px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
           />
           <button
@@ -67,7 +67,6 @@ export default async function AdminsPage({
             <tr>
               <th className="px-4 py-3">Name</th>
               <th className="px-4 py-3">Email</th>
-              <th className="px-4 py-3">Department</th>
               <th className="px-4 py-3">Staff ID</th>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3 text-right">Actions</th>
@@ -77,7 +76,7 @@ export default async function AdminsPage({
             {admins.length === 0 ? (
               <tr>
                 <td
-                  colSpan={6}
+                  colSpan={5}
                   className="px-4 py-10 text-center text-sm text-body"
                 >
                   No admins found.
@@ -97,7 +96,6 @@ export default async function AdminsPage({
                       </Link>
                     </td>
                     <td className="px-4 py-3 text-body">{a.email}</td>
-                    <td className="px-4 py-3 text-body">{a.department ?? "—"}</td>
                     <td className="px-4 py-3 text-body">{a.staffId ?? "—"}</td>
                     <td className="px-4 py-3">
                       <StatusBadge active={a.isActive} />

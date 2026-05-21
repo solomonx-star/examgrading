@@ -10,19 +10,19 @@ import { CourseForm } from "../module-form";
 export const dynamic = "force-dynamic";
 
 export default async function NewCoursePage() {
-  const me = await requireAdminScope();
+  await requireAdminScope();
   await connectDB();
 
   const [programmes, lecturers, students, rules, current] = await Promise.all([
-    Programme.find({ department: me.department, isActive: true })
+    Programme.find({ isActive: true })
       .select("name code")
       .sort({ name: 1 })
       .lean(),
-    User.find({ role: "lecturer", department: me.department, isActive: true })
+    User.find({ role: "lecturer", isActive: true })
       .select("name email")
       .sort({ name: 1 })
       .lean(),
-    User.find({ role: "student", department: me.department, isActive: true })
+    User.find({ role: "student", isActive: true })
       .select("name studentId programmeId yearLevel")
       .sort({ name: 1 })
       .lean(),
@@ -38,7 +38,7 @@ export default async function NewCoursePage() {
     <div>
       <PageHeader
         title="New module"
-        description={`Department: ${me.department}. Pick a programme + year — the enrolment list filters to the matching cohort.`}
+        description="Pick a programme + year — the enrolment list filters to the matching cohort."
       />
       <CourseForm
         mode="create"

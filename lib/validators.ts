@@ -10,7 +10,6 @@ export const adminCreateSchema = z.object({
     .trim()
     .toLowerCase()
     .email("Please enter a valid email"),
-  department: z.string().trim().min(2, "Department is required"),
   staffId: z.string().trim().optional().or(z.literal("")),
 });
 
@@ -28,7 +27,6 @@ export const studentCreateSchema = z.object({
     .email("Please enter a valid email"),
   programmeId: objectIdSchema,
   yearLevel: z.coerce.number().int().min(1).max(4),
-  department: z.string().trim().min(2, "Department is required"),
 });
 
 export const studentUpdateSchema = studentCreateSchema.extend({
@@ -43,7 +41,6 @@ export const lecturerCreateSchema = z.object({
     .trim()
     .toLowerCase()
     .email("Please enter a valid email"),
-  department: z.string().trim().min(2, "Department is required"),
   staffId: z.string().trim().optional().or(z.literal("")),
 });
 
@@ -59,7 +56,6 @@ export const programmeCreateSchema = z.object({
     .trim()
     .toUpperCase()
     .min(2, "Programme code is required"),
-  department: z.string().trim().min(2, "Department is required"),
 });
 
 export const programmeUpdateSchema = programmeCreateSchema.extend({

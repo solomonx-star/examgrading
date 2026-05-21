@@ -22,12 +22,11 @@ export async function createProgrammeAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const me = await requireAdminScope();
+  await requireAdminScope();
 
   const parsed = programmeCreateSchema.safeParse({
     name: formData.get("name"),
     code: formData.get("code"),
-    department: me.department, // forced server-side
   });
   if (!parsed.success) return { ok: false, error: zodToError(parsed.error) };
 
@@ -37,7 +36,6 @@ export async function createProgrammeAction(
     const doc = await Programme.create({
       name: parsed.data.name,
       code: parsed.data.code,
-      department: me.department,
       isActive: true,
     });
     createdId = String(doc._id);
@@ -63,7 +61,7 @@ export async function updateProgrammeAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const me = await requireAdminScope();
+  await requireAdminScope();
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return { ok: false, error: "Invalid programme id." };
   }
@@ -71,7 +69,6 @@ export async function updateProgrammeAction(
   const parsed = programmeUpdateSchema.safeParse({
     name: formData.get("name"),
     code: formData.get("code"),
-    department: me.department,
     isActive: formData.get("isActive") === "on",
   });
   if (!parsed.success) return { ok: false, error: zodToError(parsed.error) };
@@ -79,7 +76,7 @@ export async function updateProgrammeAction(
   await connectDB();
   try {
     const updated = await Programme.findOneAndUpdate(
-      { _id: id, department: me.department },
+      { _id: id },
       {
         $set: {
           name: parsed.data.name,
@@ -109,13 +106,10 @@ export async function updateProgrammeAction(
 }
 
 export async function toggleProgrammeActiveAction(id: string): Promise<void> {
-  const me = await requireAdminScope();
+  await requireAdminScope();
   if (!mongoose.Types.ObjectId.isValid(id)) return;
   await connectDB();
-  const programme = await Programme.findOne({
-    _id: id,
-    department: me.department,
-  });
+  const programme = await Programme.findOne({ _id: id });
   if (!programme) return;
   programme.isActive = !programme.isActive;
   await programme.save();
@@ -131,7 +125,7 @@ export async function toggleProgrammeActiveAction(id: string): Promise<void> {
 export async function deleteProgrammeAction(
   id: string,
 ): Promise<{ ok: boolean; error?: string }> {
-  const me = await requireAdminScope();
+  await requireAdminScope();
   if (!mongoose.Types.ObjectId.isValid(id)) return { ok: false, error: "Invalid id" };
   await connectDB();
   // Refuse delete if any module belongs to this programme
@@ -142,7 +136,7 @@ export async function deleteProgrammeAction(
       error: "Programme has modules attached. Reassign or delete them first.",
     };
   }
-  await Programme.deleteOne({ _id: id, department: me.department });
+  await Programme.deleteOne({ _id: id });
   await audit({
     action: "programme.delete",
     summary: `Deleted programme (id ${id})`,

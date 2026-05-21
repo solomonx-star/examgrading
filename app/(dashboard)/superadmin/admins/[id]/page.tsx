@@ -34,7 +34,6 @@ export default async function EditAdminPage({
         defaults={{
           name: admin.name,
           email: admin.email,
-          department: admin.department ?? "",
           staffId: admin.staffId ?? "",
           isActive: admin.isActive,
           mustChangePassword: admin.mustChangePassword,

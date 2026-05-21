@@ -28,12 +28,11 @@ export async function createLecturerAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const me = await requireAdminScope();
+  await requireAdminScope();
 
   const parsed = lecturerCreateSchema.safeParse({
     name: formData.get("name"),
     email: formData.get("email"),
-    department: me.department,
     staffId: formData.get("staffId"),
   });
   if (!parsed.success) return { ok: false, error: zodToError(parsed.error) };
@@ -44,7 +43,6 @@ export async function createLecturerAction(
     const doc = await User.create({
       name: parsed.data.name,
       email: parsed.data.email,
-      department: me.department,
       staffId: parsed.data.staffId || undefined,
       role: "lecturer",
       password: DEFAULT_PASSWORD,
@@ -74,7 +72,7 @@ export async function updateLecturerAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const me = await requireAdminScope();
+  await requireAdminScope();
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return { ok: false, error: "Invalid lecturer id." };
   }
@@ -82,7 +80,6 @@ export async function updateLecturerAction(
   const parsed = lecturerUpdateSchema.safeParse({
     name: formData.get("name"),
     email: formData.get("email"),
-    department: me.department,
     staffId: formData.get("staffId"),
     isActive: formData.get("isActive") === "on",
     mustChangePassword: formData.get("mustChangePassword") === "on",
@@ -92,7 +89,7 @@ export async function updateLecturerAction(
   await connectDB();
   try {
     const updated = await User.findOneAndUpdate(
-      { _id: id, role: "lecturer", department: me.department },
+      { _id: id, role: "lecturer" },
       {
         $set: {
           name: parsed.data.name,
@@ -124,14 +121,10 @@ export async function updateLecturerAction(
 }
 
 export async function toggleLecturerActiveAction(id: string): Promise<void> {
-  const me = await requireAdminScope();
+  await requireAdminScope();
   if (!mongoose.Types.ObjectId.isValid(id)) return;
   await connectDB();
-  const user = await User.findOne({
-    _id: id,
-    role: "lecturer",
-    department: me.department,
-  });
+  const user = await User.findOne({ _id: id, role: "lecturer" });
   if (!user) return;
   user.isActive = !user.isActive;
   await user.save();
@@ -145,14 +138,10 @@ export async function toggleLecturerActiveAction(id: string): Promise<void> {
 }
 
 export async function resetLecturerPasswordAction(id: string): Promise<void> {
-  const me = await requireAdminScope();
+  await requireAdminScope();
   if (!mongoose.Types.ObjectId.isValid(id)) return;
   await connectDB();
-  const user = await User.findOne({
-    _id: id,
-    role: "lecturer",
-    department: me.department,
-  });
+  const user = await User.findOne({ _id: id, role: "lecturer" });
   if (!user) return;
   user.password = DEFAULT_PASSWORD;
   user.mustChangePassword = true;
@@ -170,7 +159,7 @@ export async function bulkImportLecturersAction(
   _prev: BulkImportState,
   formData: FormData,
 ): Promise<BulkImportState> {
-  const me = await requireAdminScope();
+  await requireAdminScope();
 
   const state = await processCsvImport({
     formData,
@@ -179,7 +168,6 @@ export async function bulkImportLecturersAction(
       const parsed = lecturerCreateSchema.safeParse({
         name: r.name,
         email: r.email,
-        department: me.department, // forced server-side
         staffId: r.staffid ?? r.staffId ?? "",
       });
       if (!parsed.success) {
@@ -195,7 +183,6 @@ export async function bulkImportLecturersAction(
         doc: {
           name: parsed.data.name,
           email: parsed.data.email,
-          department: me.department,
           staffId: parsed.data.staffId || undefined,
           role: "lecturer",
           password: DEFAULT_PASSWORD,

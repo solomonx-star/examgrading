@@ -4,7 +4,7 @@ export interface IProgramme {
   _id: Types.ObjectId;
   name: string;
   code: string;
-  department: string;
+  department?: string;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -20,7 +20,7 @@ const ProgrammeSchema = new Schema<IProgramme>(
       trim: true,
       unique: true,
     },
-    department: { type: String, required: true, trim: true, index: true },
+    department: { type: String, trim: true, index: true },
     isActive: { type: Boolean, default: true },
   },
   { timestamps: true },

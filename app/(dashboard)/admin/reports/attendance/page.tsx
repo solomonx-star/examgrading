@@ -7,9 +7,9 @@ import { PageHeader } from "@/components/ui/PageHeader";
 export const dynamic = "force-dynamic";
 
 export default async function AttendanceReportPickerPage() {
-  const me = await requireAdminScope();
+  await requireAdminScope();
   await connectDB();
-  const courses = await Course.find({ department: me.department })
+  const courses = await Course.find({})
     .select("code name academicYear semester")
     .sort({ academicYear: -1, semester: 1, code: 1 })
     .lean();
@@ -37,7 +37,7 @@ export default async function AttendanceReportPickerPage() {
                   colSpan={4}
                   className="px-4 py-10 text-center text-sm text-body"
                 >
-                  No modules in your department.
+                  No modules yet.
                 </td>
               </tr>
             ) : (

@@ -21,10 +21,9 @@ export function ImportForm() {
       formatExplainer={
         <>
           One row per lecturer. Required columns: <code>name</code>,{" "}
-          <code>email</code>. Optional: <code>staffId</code>. Department is set
-          automatically from your account. Each new lecturer gets the default
-          password <code>iamco1234</code> and is forced to change it on first
-          login. Maximum 500 rows per file.
+          <code>email</code>. Optional: <code>staffId</code>. Each new lecturer
+          gets the default password <code>iamco1234</code> and is forced to
+          change it on first login. Maximum 500 rows per file.
         </>
       }
     />

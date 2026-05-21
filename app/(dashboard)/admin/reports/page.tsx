@@ -5,13 +5,10 @@ import { PageHeader } from "@/components/ui/PageHeader";
 export const dynamic = "force-dynamic";
 
 export default async function ReportsLandingPage() {
-  const me = await requireAdminScope();
+  await requireAdminScope();
   return (
     <div>
-      <PageHeader
-        title="Reports"
-        description={`Department: ${me.department}. Choose a report below.`}
-      />
+      <PageHeader title="Reports" description="Choose a report below." />
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Link
           href="/admin/reports/grades"

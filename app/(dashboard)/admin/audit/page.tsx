@@ -17,7 +17,7 @@ export default async function AdminAuditPage({
     page?: string;
   }>;
 }) {
-  const me = await requireAdminScope();
+  await requireAdminScope();
   const sp = await searchParams;
 
   const page = sp.page && /^\d+$/.test(sp.page) ? Number(sp.page) : 1;
@@ -25,7 +25,6 @@ export default async function AdminAuditPage({
   const [pageData, actions] = await Promise.all([
     loadAuditPage({
       filters: {
-        department: me.department,
         actor: sp.actor?.trim() || undefined,
         action: sp.action?.trim() || undefined,
         fromYMD: sp.from?.trim() || undefined,
@@ -34,7 +33,7 @@ export default async function AdminAuditPage({
       page,
       pageSize: 50,
     }),
-    listAuditActions(me.department),
+    listAuditActions(),
   ]);
 
   function hrefForPage(p: number): string {
@@ -52,7 +51,7 @@ export default async function AdminAuditPage({
     <div>
       <PageHeader
         title="Audit log"
-        description={`${me.department} department — every grade, attendance, user and module change by your staff.`}
+        description="Every grade, attendance, user and module change on the platform."
       />
 
       <AuditFilterForm

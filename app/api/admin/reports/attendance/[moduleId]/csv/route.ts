@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdminScope } from "@/lib/admin-scope";
-import {
-  loadAttendanceReport,
-  loadCourseForDepartment,
-} from "@/lib/report-data";
+import { loadAttendanceReport, loadCourseHeader } from "@/lib/report-data";
 import { safeFilename, toCsv } from "@/lib/csv";
 
 export const dynamic = "force-dynamic";
@@ -19,9 +16,9 @@ export async function GET(
   req: Request,
   ctx: { params: Promise<{ moduleId: string }> },
 ) {
-  const me = await requireAdminScope();
+  await requireAdminScope();
   const { moduleId } = await ctx.params;
-  const mod = await loadCourseForDepartment(moduleId, me.department);
+  const mod = await loadCourseHeader(moduleId);
   if (!mod) {
     return NextResponse.json({ error: "Module not found" }, { status: 404 });
   }

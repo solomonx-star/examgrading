@@ -6,7 +6,7 @@ export interface ICourse {
   _id: Types.ObjectId;
   name: string;
   code: string;
-  department: string;
+  department?: string;
   programmeId: Types.ObjectId;
   yearLevel: number;
   academicYear: string;
@@ -23,7 +23,7 @@ const CourseSchema = new Schema<ICourse>(
   {
     name: { type: String, required: true, trim: true },
     code: { type: String, required: true, uppercase: true, trim: true },
-    department: { type: String, required: true, trim: true, index: true },
+    department: { type: String, trim: true, index: true },
     programmeId: {
       type: Schema.Types.ObjectId,
       ref: "Programme",

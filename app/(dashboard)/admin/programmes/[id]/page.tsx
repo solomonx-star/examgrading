@@ -13,22 +13,19 @@ export default async function EditProgrammePage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const me = await requireAdminScope();
+  await requireAdminScope();
   const { id } = await params;
   if (!mongoose.Types.ObjectId.isValid(id)) notFound();
 
   await connectDB();
-  const programme = await Programme.findOne({
-    _id: id,
-    department: me.department,
-  }).lean();
+  const programme = await Programme.findOne({ _id: id }).lean();
   if (!programme) notFound();
 
   return (
     <div>
       <PageHeader
         title={programme.name}
-        description={`Code: ${programme.code} · Department: ${programme.department}`}
+        description={`Code: ${programme.code}`}
       />
       <EditProgrammeForm
         id={String(programme._id)}

@@ -1,10 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireAdminScope } from "@/lib/admin-scope";
-import {
-  loadAttendanceReport,
-  loadCourseForDepartment,
-} from "@/lib/report-data";
+import { loadAttendanceReport, loadCourseHeader } from "@/lib/report-data";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { PrintButton } from "@/components/ui/PrintButton";
 import { AttendanceDonutChart } from "@/components/charts/AttendanceDonutChart";
@@ -38,10 +35,10 @@ export default async function AttendanceReportViewPage({
   params: Promise<{ moduleId: string }>;
   searchParams: Promise<{ from?: string; to?: string }>;
 }) {
-  const me = await requireAdminScope();
+  await requireAdminScope();
   const { moduleId } = await params;
   const sp = await searchParams;
-  const mod = await loadCourseForDepartment(moduleId, me.department);
+  const mod = await loadCourseHeader(moduleId);
   if (!mod) notFound();
 
   const from = parseYMD(sp.from);

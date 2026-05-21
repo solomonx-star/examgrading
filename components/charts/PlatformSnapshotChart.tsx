@@ -2,7 +2,7 @@
 
 import { ApexChart } from "./ApexChart";
 
-export function DepartmentSnapshotChart({
+export function PlatformSnapshotChart({
   students,
   lecturers,
   programmes,

@@ -10,7 +10,6 @@ import { useToastFromState } from "@/lib/use-toast-state";
 type Defaults = {
   name: string;
   email: string;
-  department: string;
   staffId: string;
   isActive: boolean;
   mustChangePassword: boolean;
@@ -54,12 +53,6 @@ export function EditAdminForm({
         label="Email"
         type="email"
         defaultValue={defaults.email}
-        required
-      />
-      <Field
-        id="department"
-        label="Department"
-        defaultValue={defaults.department}
         required
       />
       <Field

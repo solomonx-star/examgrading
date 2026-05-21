@@ -66,7 +66,7 @@ export function NewStudentForm({
         </select>
         {programmes.length === 0 ? (
           <p className="text-xs text-meta-1">
-            No active programmes in your department.{" "}
+            No active programmes yet.{" "}
             <Link
               href="/admin/programmes/new"
               className="font-medium underline"

@@ -21,7 +21,7 @@ export default async function StudentReviewPage({
   params: Promise<{ studentId: string; year: string; semester: string }>;
   searchParams: Promise<{ programme?: string; year?: string }>;
 }) {
-  const me = await requireAdminScope();
+  await requireAdminScope();
   const { studentId, year, semester } = await params;
   const sp = await searchParams;
 
@@ -36,7 +36,6 @@ export default async function StudentReviewPage({
   const student = await User.findOne({
     _id: studentId,
     role: "student",
-    department: me.department,
   })
     .select("name studentId email programmeId yearLevel")
     .lean();
@@ -47,10 +46,7 @@ export default async function StudentReviewPage({
     (student.programmeId ? String(student.programmeId) : null);
   if (!programmeId) notFound();
 
-  const programme = await Programme.findOne({
-    _id: programmeId,
-    department: me.department,
-  })
+  const programme = await Programme.findOne({ _id: programmeId })
     .select("name code")
     .lean();
   if (!programme) notFound();

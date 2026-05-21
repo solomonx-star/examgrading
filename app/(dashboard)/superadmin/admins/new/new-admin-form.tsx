@@ -34,7 +34,6 @@ export function NewAdminForm() {
     >
       <Field id="name" label="Full name" required />
       <Field id="email" label="Email" type="email" required autoComplete="off" />
-      <Field id="department" label="Department" required />
       <Field id="staffId" label="Staff ID (optional)" />
 
       {state && !state.ok ? (

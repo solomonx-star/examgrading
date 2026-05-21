@@ -14,22 +14,19 @@ export default async function CoursesPage({
 }: {
   searchParams: Promise<{ q?: string; programme?: string; year?: string }>;
 }) {
-  const me = await requireAdminScope();
+  await requireAdminScope();
   const sp = await searchParams;
   const q = (sp.q ?? "").trim();
 
   await connectDB();
 
   // Programme dropdown for the filter
-  const programmes = await Programme.find({ department: me.department })
+  const programmes = await Programme.find({})
     .select("name code")
     .sort({ name: 1 })
     .lean();
-  const programmeIdsInDept = programmes.map((p) => p._id);
 
-  const filter: Record<string, unknown> = {
-    programmeId: { $in: programmeIdsInDept },
-  };
+  const filter: Record<string, unknown> = {};
   if (sp.programme && /^[a-f\d]{24}$/i.test(sp.programme)) {
     filter.programmeId = sp.programme;
   }
@@ -62,7 +59,7 @@ export default async function CoursesPage({
     <div>
       <PageHeader
         title="Modules"
-        description={`Department: ${me.department}`}
+        description="All modules on the platform"
         action={{ href: "/admin/modules/new", label: "New module" }}
       />
 
