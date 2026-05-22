@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { NotificationBell } from "@/components/dashboard/NotificationBell";
+import { PresenceHeartbeat } from "@/components/dashboard/PresenceHeartbeat";
 import { ROLE_LABEL, ROLE_NAV } from "@/lib/nav";
 
 export default async function DashboardLayout({
@@ -23,6 +24,7 @@ export default async function DashboardLayout({
       email={session.user.email ?? ""}
       notificationBell={<NotificationBell userId={session.user.id} />}
     >
+      <PresenceHeartbeat />
       {children}
     </DashboardShell>
   );

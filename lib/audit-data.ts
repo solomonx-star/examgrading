@@ -2,6 +2,7 @@
 import mongoose from "mongoose";
 import { connectDB } from "@/lib/db";
 import { AuditLog, type IAuditLog } from "@/models/AuditLog";
+import type { UserRole } from "@/models/User";
 
 export type AuditFilters = {
   // Optional substring matched against actor name (case-insensitive)
@@ -13,6 +14,9 @@ export type AuditFilters = {
   toYMD?: string;
   // Restrict to events from a specific department (admin scope)
   department?: string;
+  // Drop events performed by any of these roles (e.g. hide superadmin
+  // activity from the admin's audit view)
+  excludeActorRoles?: UserRole[];
 };
 
 export type AuditLogLite = {
@@ -58,6 +62,9 @@ export async function loadAuditPage(args: {
   const f = args.filters;
   const filter: Record<string, unknown> = {};
   if (f.department) filter.actorDepartment = f.department;
+  if (f.excludeActorRoles && f.excludeActorRoles.length > 0) {
+    filter.actorRole = { $nin: f.excludeActorRoles };
+  }
   if (f.action && f.action !== "*") filter.action = f.action;
   if (f.actor) {
     const escaped = f.actor.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -114,12 +121,18 @@ export async function loadAuditPage(args: {
 }
 
 /**
- * Returns the list of `action` values present in the audit log, optionally
- * scoped to a department. Drives the action filter dropdown.
+ * Returns the list of `action` values present in the audit log. `opts.excludeActorRoles`
+ * mirrors the loadAuditPage filter so the action dropdown matches the rows the
+ * caller will actually see.
  */
-export async function listAuditActions(department?: string): Promise<string[]> {
+export async function listAuditActions(opts?: {
+  excludeActorRoles?: UserRole[];
+}): Promise<string[]> {
   await connectDB();
-  const filter = department ? { actorDepartment: department } : {};
+  const filter: Record<string, unknown> = {};
+  if (opts?.excludeActorRoles && opts.excludeActorRoles.length > 0) {
+    filter.actorRole = { $nin: opts.excludeActorRoles };
+  }
   const actions = (await AuditLog.distinct("action", filter)) as string[];
   return actions.sort((a, b) => a.localeCompare(b));
 }

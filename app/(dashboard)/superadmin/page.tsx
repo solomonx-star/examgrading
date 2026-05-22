@@ -6,6 +6,8 @@ import { Course } from "@/models/Course";
 import { AcademicPeriod } from "@/models/AcademicPeriod";
 import { StatCard } from "@/components/ui/StatCard";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { OnlineUsersCard } from "@/components/superadmin/OnlineUsersCard";
+import { GoogleAnalyticsCard } from "@/components/superadmin/GoogleAnalyticsCard";
 
 export const dynamic = "force-dynamic";
 
@@ -38,14 +40,20 @@ export default async function SuperAdminOverviewPage() {
         <StatCard label="Active students" value={students} />
         <StatCard label="Active courses" value={courses} />
       </div>
-      <div className="mt-6 rounded-2xl border border-stroke bg-white p-5 shadow-sm">
-        <p className="text-xs font-medium uppercase tracking-wide text-body">
-          Current academic period
-        </p>
-        <p className="mt-1 text-lg font-semibold text-foreground">{period}</p>
-        <p className="mt-2 text-sm text-body">
-          Manage admins, grading rules, and academic periods from the sidebar.
-        </p>
+      <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="rounded-2xl border border-stroke bg-white p-5 shadow-sm lg:col-span-2">
+          <p className="text-xs font-medium uppercase tracking-wide text-body">
+            Current academic period
+          </p>
+          <p className="mt-1 text-lg font-semibold text-foreground">{period}</p>
+          <p className="mt-2 text-sm text-body">
+            Manage admins, grading rules, and academic periods from the sidebar.
+          </p>
+        </div>
+        <OnlineUsersCard />
+      </div>
+      <div className="mt-6 grid grid-cols-1 gap-4">
+        <GoogleAnalyticsCard />
       </div>
     </div>
   );

@@ -17,6 +17,7 @@ export interface IUser {
   profileImage?: string;
   isActive: boolean;
   mustChangePassword: boolean;
+  lastActiveAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -58,6 +59,7 @@ const UserSchema = new Schema<IUser, UserModel, IUserMethods>(
     profileImage: { type: String, trim: true },
     isActive: { type: Boolean, default: true },
     mustChangePassword: { type: Boolean, default: true },
+    lastActiveAt: { type: Date, index: true },
   },
   { timestamps: true },
 );

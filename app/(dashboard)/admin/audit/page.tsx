@@ -29,11 +29,12 @@ export default async function AdminAuditPage({
         action: sp.action?.trim() || undefined,
         fromYMD: sp.from?.trim() || undefined,
         toYMD: sp.to?.trim() || undefined,
+        excludeActorRoles: ["superadmin"],
       },
       page,
       pageSize: 50,
     }),
-    listAuditActions(),
+    listAuditActions({ excludeActorRoles: ["superadmin"] }),
   ]);
 
   function hrefForPage(p: number): string {
