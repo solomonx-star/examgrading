@@ -8,6 +8,7 @@ import { requireAdminScope } from "@/lib/admin-scope";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { loadStudentReviewRows } from "@/lib/cohort-data";
 import { StudentReviewActions } from "./review-actions";
+import { GradeEditRow } from "./grade-edit-row";
 
 export const dynamic = "force-dynamic";
 
@@ -111,13 +112,14 @@ export default async function StudentReviewPage({
               <th className="px-4 py-3 text-right">GPA</th>
               <th className="px-4 py-3">Submission</th>
               <th className="hidden px-4 py-3 md:table-cell">Attendance</th>
+              <th className="px-4 py-3 text-right">Edit</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-stroke">
             {rows.length === 0 ? (
               <tr>
                 <td
-                  colSpan={10}
+                  colSpan={11}
                   className="px-4 py-10 text-center text-sm text-body"
                 >
                   No modules in this cohort.
@@ -125,59 +127,13 @@ export default async function StudentReviewPage({
               </tr>
             ) : (
               rows.map((r) => (
-                <tr key={r.moduleId}>
-                  <td className="hidden px-4 py-3 font-mono text-xs text-foreground sm:table-cell">
-                    {r.moduleCode}
-                  </td>
-                  <td className="px-4 py-3 text-foreground">
-                    <span className="font-mono text-xs text-body sm:hidden">
-                      {r.moduleCode}
-                    </span>
-                    <span className="block sm:inline">{r.moduleName}</span>
-                  </td>
-                  <td className="hidden px-4 py-3 text-right text-body md:table-cell">
-                    {r.testScore !== null ? r.testScore : "—"}
-                  </td>
-                  <td className="hidden px-4 py-3 text-right text-body md:table-cell">
-                    {r.examScore !== null ? r.examScore : "—"}
-                  </td>
-                  <td className="px-4 py-3 text-right font-semibold text-foreground">
-                    {r.finalScore !== null ? r.finalScore.toFixed(2) : "—"}
-                  </td>
-                  <td className="px-4 py-3 text-foreground">{r.grade ?? "—"}</td>
-                  <td className="hidden px-4 py-3 text-body sm:table-cell">
-                    {r.remark ?? "—"}
-                  </td>
-                  <td className="px-4 py-3 text-right text-body">
-                    {r.gpa !== null ? r.gpa.toFixed(2) : "—"}
-                  </td>
-                  <td className="px-4 py-3">
-                    {r.isPublished ? (
-                      <span className="inline-flex rounded-full bg-meta-3/10 px-2 py-0.5 text-[11px] font-medium text-meta-3">
-                        Published
-                      </span>
-                    ) : r.submissionStatus === "submitted" ? (
-                      <span className="inline-flex rounded-full bg-secondary/20 px-2 py-0.5 text-[11px] font-medium text-foreground">
-                        Submitted
-                      </span>
-                    ) : r.submissionStatus === "draft" ? (
-                      <span className="inline-flex rounded-full bg-whiter px-2 py-0.5 text-[11px] font-medium text-body">
-                        Draft
-                      </span>
-                    ) : (
-                      <span className="text-[11px] text-body">Not entered</span>
-                    )}
-                  </td>
-                  <td className="hidden px-4 py-3 md:table-cell">
-                    {r.attendanceMet === false ? (
-                      <span className="inline-flex rounded-full bg-meta-1/10 px-2 py-0.5 text-[10px] font-medium text-meta-1">
-                        Low attendance
-                      </span>
-                    ) : (
-                      <span className="text-[11px] text-body">—</span>
-                    )}
-                  </td>
-                </tr>
+                <GradeEditRow
+                  key={r.moduleId}
+                  row={r}
+                  studentId={String(student._id)}
+                  academicYear={academicYear}
+                  semester={semesterTyped}
+                />
               ))
             )}
           </tbody>
