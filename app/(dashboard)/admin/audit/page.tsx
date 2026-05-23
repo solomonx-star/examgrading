@@ -30,11 +30,15 @@ export default async function AdminAuditPage({
         fromYMD: sp.from?.trim() || undefined,
         toYMD: sp.to?.trim() || undefined,
         excludeActorRoles: ["superadmin"],
+        excludeActionPrefixes: ["access_payment."],
       },
       page,
       pageSize: 50,
     }),
-    listAuditActions({ excludeActorRoles: ["superadmin"] }),
+    listAuditActions({
+      excludeActorRoles: ["superadmin"],
+      excludeActionPrefixes: ["access_payment."],
+    }),
   ]);
 
   function hrefForPage(p: number): string {

@@ -55,7 +55,7 @@ export function Header({
   notificationBell?: React.ReactNode;
 }) {
   return (
-    <header className="flex items-center gap-3 border-b border-stroke bg-white px-4 py-3 sm:px-5">
+    <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-stroke bg-white px-4 py-3 sm:px-5">
       <button
         type="button"
         onClick={onMenuClick}

@@ -66,7 +66,7 @@ export function Sidebar({
   roleLabel: string;
 }) {
   return (
-    <aside className="hidden w-60 shrink-0 bg-iamco-blue lg:flex lg:flex-col">
+    <aside className="sticky top-0 hidden h-screen w-60 shrink-0 overflow-y-auto bg-iamco-blue lg:flex lg:flex-col">
       <SidebarNav items={items} roleLabel={roleLabel} />
     </aside>
   );

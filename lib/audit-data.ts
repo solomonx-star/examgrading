@@ -17,6 +17,9 @@ export type AuditFilters = {
   // Drop events performed by any of these roles (e.g. hide superadmin
   // activity from the admin's audit view)
   excludeActorRoles?: UserRole[];
+  // Drop events whose action key starts with any of these prefixes
+  // (e.g. "access_payment." to hide payment activity from admin)
+  excludeActionPrefixes?: string[];
 };
 
 export type AuditLogLite = {
@@ -64,6 +67,12 @@ export async function loadAuditPage(args: {
   if (f.department) filter.actorDepartment = f.department;
   if (f.excludeActorRoles && f.excludeActorRoles.length > 0) {
     filter.actorRole = { $nin: f.excludeActorRoles };
+  }
+  if (f.excludeActionPrefixes && f.excludeActionPrefixes.length > 0) {
+    const escaped = f.excludeActionPrefixes.map((p) =>
+      p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+    );
+    filter.action = { $not: new RegExp(`^(?:${escaped.join("|")})`) };
   }
   if (f.action && f.action !== "*") filter.action = f.action;
   if (f.actor) {
@@ -127,6 +136,7 @@ export async function loadAuditPage(args: {
  */
 export async function listAuditActions(opts?: {
   excludeActorRoles?: UserRole[];
+  excludeActionPrefixes?: string[];
 }): Promise<string[]> {
   await connectDB();
   const filter: Record<string, unknown> = {};
@@ -134,7 +144,12 @@ export async function listAuditActions(opts?: {
     filter.actorRole = { $nin: opts.excludeActorRoles };
   }
   const actions = (await AuditLog.distinct("action", filter)) as string[];
-  return actions.sort((a, b) => a.localeCompare(b));
+  const prefixes = opts?.excludeActionPrefixes ?? [];
+  const filtered =
+    prefixes.length === 0
+      ? actions
+      : actions.filter((a) => !prefixes.some((p) => a.startsWith(p)));
+  return filtered.sort((a, b) => a.localeCompare(b));
 }
 
 // Unused but kept to silence the unused-var hint on mongoose import in some envs
