@@ -67,10 +67,11 @@ export default async function AdminGradesPage({
 
       <form className="mb-6 grid grid-cols-1 gap-3 rounded-2xl border border-stroke bg-white p-4 shadow-sm sm:grid-cols-2 sm:items-end lg:grid-cols-[2fr_1fr_1fr_1fr_auto]">
         <div className="space-y-1">
-          <label className="block text-xs font-medium text-foreground">
+          <label htmlFor="programme" className="block text-xs font-medium text-foreground">
             Programme
           </label>
           <select
+            id="programme"
             name="programme"
             defaultValue={programmeId}
             className="w-full rounded-lg border border-stroke bg-white px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
@@ -87,10 +88,11 @@ export default async function AdminGradesPage({
           </select>
         </div>
         <div className="space-y-1">
-          <label className="block text-xs font-medium text-foreground">
+          <label htmlFor="year" className="block text-xs font-medium text-foreground">
             Year
           </label>
           <select
+            id="year"
             name="year"
             defaultValue={String(yearLevel)}
             className="w-full rounded-lg border border-stroke bg-white px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
@@ -102,10 +104,11 @@ export default async function AdminGradesPage({
           </select>
         </div>
         <div className="space-y-1">
-          <label className="block text-xs font-medium text-foreground">
+          <label htmlFor="academicYear" className="block text-xs font-medium text-foreground">
             Academic year
           </label>
           <input
+            id="academicYear"
             name="academicYear"
             defaultValue={academicYear}
             placeholder="2025/2026"
@@ -113,10 +116,11 @@ export default async function AdminGradesPage({
           />
         </div>
         <div className="space-y-1">
-          <label className="block text-xs font-medium text-foreground">
+          <label htmlFor="semester" className="block text-xs font-medium text-foreground">
             Semester
           </label>
           <select
+            id="semester"
             name="semester"
             defaultValue={semester}
             className="w-full rounded-lg border border-stroke bg-white px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"

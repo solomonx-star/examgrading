@@ -9,6 +9,7 @@
     "lint": "eslint",
     "seed": "tsx scripts/seed.ts",
     "seed:reset": "tsx scripts/seed.ts --reset",
+    "seed:superadmin": "tsx scripts/seed.ts --superadmin-only",
     "sync-indexes": "tsx scripts/sync-indexes.ts"
   },
   "dependencies": {

@@ -16,6 +16,9 @@ import { AcademicPeriod } from "@/models/AcademicPeriod";
 import type { UserRole } from "@/models/User";
 
 const RESET = process.argv.includes("--reset");
+const SUPERADMIN_ONLY =
+  process.argv.includes("--superadmin-only") ||
+  process.env.NODE_ENV === "production";
 const DEFAULT_PASSWORD = "iamco1234";
 const ACADEMIC_YEAR = "2025/2026";
 const SEMESTER: "First" | "Second" | "Summer" = "First";
@@ -189,6 +192,13 @@ async function run() {
   await connectDB();
   console.log(`Connected to ${mongoose.connection.name}`);
 
+  if (RESET && SUPERADMIN_ONLY) {
+    throw new Error(
+      "Refusing to --reset while in superadmin-only mode (production). " +
+        "Remove --reset or unset NODE_ENV=production to run a full reset.",
+    );
+  }
+
   if (RESET) {
     console.log("--reset: dropping collections…");
     await Promise.all([
@@ -223,6 +233,18 @@ async function run() {
 
   console.log("Seeding super admin…");
   const superAdmin = await upsertStaff(SUPER_ADMIN);
+
+  if (SUPERADMIN_ONLY) {
+    console.log(
+      "\n✓ Superadmin-only seed complete (NODE_ENV=production or --superadmin-only).",
+    );
+    console.log(
+      `  Super admin: ${SUPER_ADMIN.email} (password '${DEFAULT_PASSWORD}' — change immediately)`,
+    );
+    void superAdmin;
+    await mongoose.disconnect();
+    return;
+  }
 
   console.log("Seeding admins…");
   for (const a of ADMINS) await upsertStaff(a);

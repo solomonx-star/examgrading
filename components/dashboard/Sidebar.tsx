@@ -27,7 +27,7 @@ export function SidebarNav({
           className="h-10 w-10 shrink-0"
         />
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-white">IAM CO</p>
+          <p className="truncate text-sm font-semibold text-white">I AM CO</p>
           <p className="truncate text-xs text-white/70">{roleLabel}</p>
         </div>
       </div>
