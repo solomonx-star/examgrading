@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { Toaster } from "sonner";
-import { GoogleAnalytics } from "@next/third-parties/google";
 import { QueryProvider } from "@/components/providers/QueryProvider";
+import { PostHogProvider } from "@/components/providers/PostHogProvider";
+import PostHogPageView from "@/components/providers/PostHogPageView";
 import { Analytics } from "@vercel/analytics/next";
+import { Suspense } from "react";
 import "./globals.css";
-
-const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 
 const satoshi = localFont({
   src: [
@@ -35,10 +35,15 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">
-        <QueryProvider>
-        <Analytics />
-          {children}
-        </QueryProvider>
+        <PostHogProvider>
+          <Suspense fallback={null}>
+            <PostHogPageView />
+          </Suspense>
+          <QueryProvider>
+            <Analytics />
+            {children}
+          </QueryProvider>
+        </PostHogProvider>
         <Toaster
           position="top-right"
           richColors
@@ -48,7 +53,6 @@ export default function RootLayout({
           }}
         />
       </body>
-      {GA_MEASUREMENT_ID ? <GoogleAnalytics gaId={GA_MEASUREMENT_ID} /> : null}
     </html>
   );
 }

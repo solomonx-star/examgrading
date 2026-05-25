@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { verifyAccessPaymentAction } from "@/lib/actions/payment";
+import { trackEvent, GA_EVENTS } from "@/lib/analytics";
 
 export default function AccessSuccessPage() {
   const router = useRouter();
@@ -29,6 +30,7 @@ export default function AccessSuccessPage() {
         if (!res.ok) {
           setErrorMsg(res.error ?? "Verification failed.");
           setState("error");
+          trackEvent("payment_verification_failure", { error: res.error });
           return;
         }
         try {
@@ -38,12 +40,20 @@ export default function AccessSuccessPage() {
         }
         if (res.paymentId) setReceiptId(res.paymentId);
         setState("success");
+        trackEvent(GA_EVENTS.PAYMENT_SUCCESS, {
+          transaction_id: res.paymentId,
+          currency: "SLE",
+          items: [{ item_name: "Exam Access" }],
+        });
       })
       .catch((err: unknown) => {
-        setErrorMsg(
-          err instanceof Error ? err.message : "Verification failed.",
-        );
+        const msg = err instanceof Error ? err.message : "Unexpected error.";
+        setErrorMsg(msg);
         setState("error");
+        trackEvent("payment_verification_error", { error: msg });
+      });
+  }, []);
+
       });
   }, []);
 

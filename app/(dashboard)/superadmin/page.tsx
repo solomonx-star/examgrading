@@ -7,7 +7,7 @@ import { AcademicPeriod } from "@/models/AcademicPeriod";
 import { StatCard } from "@/components/ui/StatCard";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { OnlineUsersCard } from "@/components/superadmin/OnlineUsersCard";
-import { GoogleAnalyticsCard } from "@/components/superadmin/GoogleAnalyticsCard";
+import { PostHogCard } from "@/components/superadmin/PostHogCard";
 
 export const dynamic = "force-dynamic";
 
@@ -52,8 +52,8 @@ export default async function SuperAdminOverviewPage() {
         </div>
         <OnlineUsersCard />
       </div>
-      <div className="mt-6 grid grid-cols-1 gap-4">
-        <GoogleAnalyticsCard />
+      <div className="mt-6">
+        <PostHogCard />
       </div>
     </div>
   );

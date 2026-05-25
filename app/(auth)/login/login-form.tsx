@@ -4,6 +4,7 @@ import { useActionState, useEffect } from "react";
 import { useFormStatus } from "react-dom";
 import { toast } from "sonner";
 import { loginAction, type LoginState } from "./actions";
+import { trackEvent, GA_EVENTS } from "@/lib/analytics";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -25,12 +26,20 @@ export function LoginForm({ callbackUrl }: { callbackUrl: string }) {
   );
   // Login success redirects, so we only need to surface errors here.
   useEffect(() => {
-    if (state?.error) toast.error(state.error);
+    if (state?.error) {
+      toast.error(state.error);
+      trackEvent("login_failure", { error: state.error });
+    }
   }, [state]);
+
+  const handleSubmit = (formData: FormData) => {
+    trackEvent(GA_EVENTS.LOGIN, { method: "credentials" });
+    formAction(formData);
+  };
 
   return (
     <form
-      action={formAction}
+      action={handleSubmit}
       className="space-y-5 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-stroke"
     >
       <input type="hidden" name="callbackUrl" value={callbackUrl} />

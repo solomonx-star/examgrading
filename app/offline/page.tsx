@@ -4,7 +4,7 @@ import Image from "next/image";
 
 export default function OfflinePage() {
   return (
-    <main className="flex min-h-[100dvh] flex-col items-center justify-center bg-whiten px-6 py-10 text-center">
+    <main className="flex min-h-dvh flex-col items-center justify-center bg-whiten px-6 py-10 text-center">
       <Image
         src="/IAMCOLOGO.png"
         alt="IAM CO"

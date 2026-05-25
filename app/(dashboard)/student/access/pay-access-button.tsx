@@ -3,6 +3,7 @@
 import { useTransition } from "react";
 import { toast } from "sonner";
 import { createAccessCheckoutAction } from "@/lib/actions/payment";
+import { trackEvent, GA_EVENTS } from "@/lib/analytics";
 
 export function PayAccessButton({
   amount,
@@ -14,10 +15,16 @@ export function PayAccessButton({
   const [pending, start] = useTransition();
 
   function pay() {
+    trackEvent(GA_EVENTS.PAYMENT_START, {
+      value: amount / 100,
+      currency: "SLE",
+      items: [{ item_name: "Exam Access" }],
+    });
     start(async () => {
       const res = await createAccessCheckoutAction();
       if (!res.ok || !res.checkoutUrl || !res.sessionId) {
         toast.error(res.error ?? "Could not start payment.");
+        trackEvent("payment_error", { error: res.error });
         return;
       }
       // Only redirect to Monime — never to an arbitrary host.
