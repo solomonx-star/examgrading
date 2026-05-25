@@ -2,7 +2,9 @@
 
 import Image from "next/image";
 import { useFormStatus } from "react-dom";
+import posthog from "posthog-js";
 import { signOutAction } from "@/lib/actions/auth";
+import { trackEvent, GA_EVENTS } from "@/lib/analytics";
 
 function SignOutButton() {
   const { pending } = useFormStatus();
@@ -100,7 +102,13 @@ export function Header({
           <p className="truncate text-sm font-medium text-foreground">{name}</p>
           <p className="hidden truncate text-xs text-body sm:block">{email}</p>
         </div>
-        <form action={signOutAction}>
+        <form
+          action={signOutAction}
+          onSubmit={() => {
+            trackEvent(GA_EVENTS.LOGOUT);
+            posthog.reset();
+          }}
+        >
           <SignOutButton />
         </form>
       </div>

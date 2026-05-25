@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { NotificationBell } from "@/components/dashboard/NotificationBell";
 import { PresenceHeartbeat } from "@/components/dashboard/PresenceHeartbeat";
+import { PostHogIdentify } from "@/components/providers/PostHogIdentify";
 import { ROLE_LABEL, ROLE_NAV } from "@/lib/nav";
 
 export default async function DashboardLayout({
@@ -25,6 +26,12 @@ export default async function DashboardLayout({
       notificationBell={<NotificationBell userId={session.user.id} />}
     >
       <PresenceHeartbeat />
+      <PostHogIdentify
+        userId={session.user.id}
+        email={session.user.email ?? undefined}
+        name={session.user.name ?? undefined}
+        role={role}
+      />
       {children}
     </DashboardShell>
   );
