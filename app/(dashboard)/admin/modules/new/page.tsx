@@ -31,21 +31,21 @@ export default async function NewCoursePage() {
   ]);
 
   const globalRule = rules.find((r) => !r.courseId);
-  const defaultProgrammeId =
-    programmes.length === 1 ? String(programmes[0]._id) : "";
+  const defaultProgrammeIds =
+    programmes.length === 1 ? [String(programmes[0]._id)] : [];
 
   return (
     <div>
       <PageHeader
         title="New module"
-        description="Pick a programme + year — the enrolment list filters to the matching cohort."
+        description="Tick the programmes that share this module, then pick a year — the enrolment list shows every eligible student across those programmes."
       />
       <CourseForm
         mode="create"
         defaults={{
           name: "",
           code: "",
-          programmeId: defaultProgrammeId,
+          programmeIds: defaultProgrammeIds,
           yearLevel: 1,
           academicYear: current?.year ?? "",
           semester: (current?.semester as "First" | "Second" | "Summer") ?? "First",

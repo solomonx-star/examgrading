@@ -28,7 +28,7 @@ export default async function CoursesPage({
 
   const filter: Record<string, unknown> = {};
   if (sp.programme && /^[a-f\d]{24}$/i.test(sp.programme)) {
-    filter.programmeId = sp.programme;
+    filter.programmeIds = sp.programme;
   }
   if (sp.year && /^[1-4]$/.test(sp.year)) {
     filter.yearLevel = Number(sp.year);
@@ -149,7 +149,10 @@ export default async function CoursesPage({
                       </Link>
                     </td>
                     <td className="hidden px-4 py-3 text-body lg:table-cell">
-                      {programmeName.get(String(m.programmeId)) ?? "—"}
+                      {m.programmeIds
+                        .map((pid) => programmeName.get(String(pid)))
+                        .filter((n): n is string => !!n)
+                        .join(", ") || "—"}
                     </td>
                     <td className="px-4 py-3 text-body">Year {m.yearLevel}</td>
                     <td className="hidden px-4 py-3 text-body lg:table-cell">

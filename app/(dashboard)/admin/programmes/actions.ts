@@ -128,8 +128,8 @@ export async function deleteProgrammeAction(
   await requireAdminScope();
   if (!mongoose.Types.ObjectId.isValid(id)) return { ok: false, error: "Invalid id" };
   await connectDB();
-  // Refuse delete if any module belongs to this programme
-  const inUse = await Module.exists({ programmeId: id });
+  // Refuse delete if any module is attached to this programme
+  const inUse = await Module.exists({ programmeIds: id });
   if (inUse) {
     return {
       ok: false,

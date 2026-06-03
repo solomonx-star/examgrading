@@ -8,6 +8,18 @@ import { requireLecturerCourse } from "@/lib/lecturer-course";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StatCard } from "@/components/ui/StatCard";
 
+function joinProgrammes(
+  programmeIds: { toString(): string }[],
+  byId: Map<string, string>,
+): string {
+  return (
+    programmeIds
+      .map((pid) => byId.get(String(pid)))
+      .filter((n): n is string => !!n)
+      .join(", ") || "—"
+  );
+}
+
 export const dynamic = "force-dynamic";
 
 export default async function LecturerCoursePage({
@@ -19,7 +31,7 @@ export default async function LecturerCoursePage({
   const { course: mod } = await requireLecturerCourse(id);
 
   await connectDB();
-  const [enrolled, attendanceCount, gradeStats, programme] = await Promise.all([
+  const [enrolled, attendanceCount, gradeStats, programmes] = await Promise.all([
     User.countDocuments({
       _id: { $in: mod.enrolledStudents },
       isActive: true,
@@ -43,16 +55,22 @@ export default async function LecturerCoursePage({
         },
       },
     ]),
-    Programme.findById(mod.programmeId).select("name code").lean(),
+    Programme.find({ _id: { $in: mod.programmeIds } })
+      .select("name code")
+      .lean(),
   ]);
 
   const grades = gradeStats[0] ?? { total: 0, submitted: 0, published: 0 };
+  const programmeNameById = new Map(
+    programmes.map((p) => [String(p._id), p.name as string]),
+  );
+  const programmesLabel = joinProgrammes(mod.programmeIds, programmeNameById);
 
   return (
     <div>
       <PageHeader
         title={`${mod.code} — ${mod.name}`}
-        description={`${programme?.name ?? ""} · Year ${mod.yearLevel} · ${mod.academicYear} · ${mod.semester}`}
+        description={`${programmesLabel} · Year ${mod.yearLevel} · ${mod.academicYear} · ${mod.semester}`}
       />
 
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">

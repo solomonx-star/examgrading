@@ -7,7 +7,7 @@ export interface ICourse {
   name: string;
   code: string;
   department?: string;
-  programmeId: Types.ObjectId;
+  programmeIds: Types.ObjectId[];
   yearLevel: number;
   academicYear: string;
   semester: Semester;
@@ -24,11 +24,15 @@ const CourseSchema = new Schema<ICourse>(
     name: { type: String, required: true, trim: true },
     code: { type: String, required: true, uppercase: true, trim: true },
     department: { type: String, trim: true, index: true },
-    programmeId: {
-      type: Schema.Types.ObjectId,
-      ref: "Programme",
+    programmeIds: {
+      type: [{ type: Schema.Types.ObjectId, ref: "Programme" }],
       required: true,
+      default: [],
       index: true,
+      validate: {
+        validator: (v: Types.ObjectId[]) => Array.isArray(v) && v.length >= 1,
+        message: "A module must be attached to at least one programme.",
+      },
     },
     yearLevel: {
       type: Number,
@@ -50,15 +54,15 @@ const CourseSchema = new Schema<ICourse>(
   { timestamps: true, collection: "courses" },
 );
 
-// Uniqueness within a period for a programme
+// One module record per (code, period). Programmes that share the module
+// reference the same document via programmeIds.
 CourseSchema.index(
-  { code: 1, programmeId: 1, academicYear: 1, semester: 1 },
+  { code: 1, academicYear: 1, semester: 1 },
   { unique: true },
 );
 
-// Search and listing optimizations
 CourseSchema.index({ department: 1, academicYear: 1, semester: 1 });
-CourseSchema.index({ programmeId: 1, yearLevel: 1 });
+CourseSchema.index({ programmeIds: 1, yearLevel: 1 });
 
 export const Course: Model<ICourse> =
   (mongoose.models.Course as Model<ICourse>) ||

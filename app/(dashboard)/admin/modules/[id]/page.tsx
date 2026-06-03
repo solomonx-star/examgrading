@@ -24,11 +24,6 @@ export default async function EditCoursePage({
   const mod = await Course.findById(id).lean();
   if (!mod) notFound();
 
-  const programme = await Programme.findById(mod.programmeId)
-    .select("name code")
-    .lean();
-  if (!programme) notFound();
-
   const [programmes, lecturers, students, rules] = await Promise.all([
     Programme.find({ isActive: true })
       .select("name code")
@@ -45,11 +40,20 @@ export default async function EditCoursePage({
     GradingRule.find().select("name courseId").sort({ name: 1 }).lean(),
   ]);
 
+  const programmeName = new Map(
+    programmes.map((p) => [String(p._id), p.name as string]),
+  );
+  const programmesLabel =
+    mod.programmeIds
+      .map((pid) => programmeName.get(String(pid)) ?? null)
+      .filter((n): n is string => !!n)
+      .join(", ") || "No programmes";
+
   return (
     <div>
       <PageHeader
         title={`${mod.code} — ${mod.name}`}
-        description={`${programme.name} · Year ${mod.yearLevel} · ${mod.academicYear} · ${mod.semester}`}
+        description={`${programmesLabel} · Year ${mod.yearLevel} · ${mod.academicYear} · ${mod.semester}`}
       />
       <CourseForm
         mode="edit"
@@ -57,7 +61,7 @@ export default async function EditCoursePage({
         defaults={{
           name: mod.name,
           code: mod.code,
-          programmeId: String(mod.programmeId),
+          programmeIds: mod.programmeIds.map((pid) => String(pid)),
           yearLevel: mod.yearLevel,
           academicYear: mod.academicYear,
           semester: mod.semester,

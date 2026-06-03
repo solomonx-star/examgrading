@@ -9,7 +9,7 @@ export type ModuleLite = {
   id: string;
   code: string;
   name: string;
-  programmeId: string;
+  programmeIds: string[];
   yearLevel: number;
   academicYear: string;
   semester: "First" | "Second" | "Summer";
@@ -22,14 +22,14 @@ export async function getEnrolledModules(
   const modules = await Course.find({
     enrolledStudents: new mongoose.Types.ObjectId(studentId),
   })
-    .select("code name programmeId yearLevel academicYear semester")
+    .select("code name programmeIds yearLevel academicYear semester")
     .sort({ yearLevel: 1, academicYear: -1, semester: 1, code: 1 })
     .lean();
   return modules.map((m) => ({
     id: String(m._id),
     code: m.code,
     name: m.name,
-    programmeId: String(m.programmeId),
+    programmeIds: m.programmeIds.map((pid) => String(pid)),
     yearLevel: m.yearLevel,
     academicYear: m.academicYear,
     semester: m.semester,

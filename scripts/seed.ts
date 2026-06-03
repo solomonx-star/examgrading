@@ -323,45 +323,49 @@ async function run() {
 
   const lecByEmail = new Map(lecturerDocs.map((l) => [l.email, l]));
 
+  // A module can be shared by more than one programme — list every code that
+  // takes it. GEN101 below is the classic example: General Studies, Business,
+  // and Computer Science students all sit the same English Communication
+  // module with the same lecturer and grading rule.
   const modules: Array<{
     code: string;
     name: string;
-    programmeCode: string;
+    programmeCodes: string[];
     yearLevel: number;
     lecturerEmail: string;
   }> = [
     {
       code: "CS101",
       name: "Introduction to Computer Science",
-      programmeCode: "BSCCS",
+      programmeCodes: ["BSCCS"],
       yearLevel: 1,
       lecturerEmail: "lecturer.fatmata@iamco.edu.sl",
     },
     {
       code: "CS201",
       name: "Data Structures",
-      programmeCode: "BSCCS",
+      programmeCodes: ["BSCCS"],
       yearLevel: 2,
       lecturerEmail: "lecturer.ibrahim@iamco.edu.sl",
     },
     {
       code: "BUS101",
       name: "Principles of Management",
-      programmeCode: "BBA",
+      programmeCodes: ["BBA"],
       yearLevel: 1,
       lecturerEmail: "lecturer.isatu@iamco.edu.sl",
     },
     {
       code: "BUS201",
       name: "Financial Accounting",
-      programmeCode: "BBA",
+      programmeCodes: ["BBA"],
       yearLevel: 2,
       lecturerEmail: "lecturer.isatu@iamco.edu.sl",
     },
     {
       code: "GEN101",
       name: "English Communication",
-      programmeCode: "DGS",
+      programmeCodes: ["DGS", "BBA", "BSCCS"],
       yearLevel: 1,
       lecturerEmail: "lecturer.sheku@iamco.edu.sl",
     },
@@ -370,23 +374,31 @@ async function run() {
   for (const m of modules) {
     const lec = lecByEmail.get(m.lecturerEmail);
     if (!lec) throw new Error(`Lecturer not found: ${m.lecturerEmail}`);
-    const programmeId = programmeByCode.get(m.programmeCode);
-    if (!programmeId) {
-      throw new Error(`Programme not found for code ${m.programmeCode}`);
-    }
-    const enrolled =
-      studentsByProgrammeYear.get(`${String(programmeId)}|${m.yearLevel}`) ?? [];
+    const programmeIds = m.programmeCodes.map((code) => {
+      const pid = programmeByCode.get(code);
+      if (!pid) throw new Error(`Programme not found for code ${code}`);
+      return pid;
+    });
+    // Pool every eligible student across the listed programmes for this year.
+    const enrolled = Array.from(
+      new Set(
+        programmeIds.flatMap((pid) =>
+          (studentsByProgrammeYear.get(`${String(pid)}|${m.yearLevel}`) ?? [])
+            .map((id) => id.toString()),
+        ),
+      ),
+    ).map((s) => new mongoose.Types.ObjectId(s));
+
     await Module.findOneAndUpdate(
       {
         code: m.code,
-        programmeId,
         academicYear: ACADEMIC_YEAR,
         semester: SEMESTER,
       },
       {
         $set: {
           name: m.name,
-          programmeId,
+          programmeIds,
           yearLevel: m.yearLevel,
           academicYear: ACADEMIC_YEAR,
           semester: SEMESTER,

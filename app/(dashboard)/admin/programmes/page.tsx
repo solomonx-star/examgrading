@@ -33,8 +33,10 @@ export default async function ProgrammesPage({
     _id: typeof ids[number];
     count: number;
   }>([
-    { $match: { programmeId: { $in: ids } } },
-    { $group: { _id: "$programmeId", count: { $sum: 1 } } },
+    { $match: { programmeIds: { $in: ids } } },
+    { $unwind: "$programmeIds" },
+    { $match: { programmeIds: { $in: ids } } },
+    { $group: { _id: "$programmeIds", count: { $sum: 1 } } },
   ]);
   const countByProgramme = new Map(
     moduleCounts.map((c) => [String(c._id), c.count]),

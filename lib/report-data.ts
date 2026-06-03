@@ -11,13 +11,59 @@ export type CourseHeader = {
   id: string;
   code: string;
   name: string;
-  programmeId: string;
-  programmeName: string | null;
-  programmeCode: string | null;
+  programmeIds: string[];
+  programmeNames: string[];
+  programmeCodes: string[];
+  /** Comma-joined names — empty string if none. */
+  programmesLabel: string;
   yearLevel: number;
   academicYear: string;
   semester: "First" | "Second" | "Summer";
 };
+
+async function buildHeader(
+  mod: {
+    _id: mongoose.Types.ObjectId;
+    code: string;
+    name: string;
+    programmeIds: mongoose.Types.ObjectId[];
+    yearLevel: number;
+    academicYear: string;
+    semester: "First" | "Second" | "Summer";
+  },
+): Promise<CourseHeader> {
+  const programmes = mod.programmeIds.length
+    ? await Programme.find({ _id: { $in: mod.programmeIds } })
+        .select("name code")
+        .lean()
+    : [];
+  // Preserve the module's programmeIds order
+  const byId = new Map(
+    programmes.map((p) => [
+      String(p._id),
+      { name: p.name as string, code: p.code as string },
+    ]),
+  );
+  const orderedIds = mod.programmeIds.map((pid) => String(pid));
+  const names = orderedIds
+    .map((id) => byId.get(id)?.name)
+    .filter((n): n is string => !!n);
+  const codes = orderedIds
+    .map((id) => byId.get(id)?.code)
+    .filter((c): c is string => !!c);
+  return {
+    id: String(mod._id),
+    code: mod.code,
+    name: mod.name,
+    programmeIds: orderedIds,
+    programmeNames: names,
+    programmeCodes: codes,
+    programmesLabel: names.join(", "),
+    yearLevel: mod.yearLevel,
+    academicYear: mod.academicYear,
+    semester: mod.semester,
+  };
+}
 
 export async function loadCourseHeader(
   courseId: string,
@@ -25,23 +71,10 @@ export async function loadCourseHeader(
   if (!mongoose.Types.ObjectId.isValid(courseId)) return null;
   await connectDB();
   const mod = await Course.findById(courseId)
-    .select("code name programmeId yearLevel academicYear semester")
+    .select("code name programmeIds yearLevel academicYear semester")
     .lean();
   if (!mod) return null;
-  const programme = await Programme.findById(mod.programmeId)
-    .select("name code")
-    .lean();
-  return {
-    id: String(mod._id),
-    code: mod.code,
-    name: mod.name,
-    programmeId: String(mod.programmeId),
-    programmeName: programme?.name ?? null,
-    programmeCode: programme?.code ?? null,
-    yearLevel: mod.yearLevel,
-    academicYear: mod.academicYear,
-    semester: mod.semester,
-  };
+  return buildHeader(mod);
 }
 
 export async function loadCourseForLecturer(
@@ -51,23 +84,10 @@ export async function loadCourseForLecturer(
   if (!mongoose.Types.ObjectId.isValid(courseId)) return null;
   await connectDB();
   const mod = await Course.findOne({ _id: courseId, lecturerId })
-    .select("code name programmeId yearLevel academicYear semester")
+    .select("code name programmeIds yearLevel academicYear semester")
     .lean();
   if (!mod) return null;
-  const programme = await Programme.findById(mod.programmeId)
-    .select("name code")
-    .lean();
-  return {
-    id: String(mod._id),
-    code: mod.code,
-    name: mod.name,
-    programmeId: String(mod.programmeId),
-    programmeName: programme?.name ?? null,
-    programmeCode: programme?.code ?? null,
-    yearLevel: mod.yearLevel,
-    academicYear: mod.academicYear,
-    semester: mod.semester,
-  };
+  return buildHeader(mod);
 }
 
 export type GradeReportRow = {

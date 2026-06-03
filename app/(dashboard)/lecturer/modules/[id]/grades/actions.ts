@@ -211,14 +211,25 @@ export async function submitGradesAction(
     metadata: { count: result.modifiedCount ?? 0, code: mod.code, academicYear: mod.academicYear, semester: mod.semester },
   });
 
-  // Notify admins in the module's department that grades are ready for review.
-  const programme = await Programme.findById(mod.programmeId)
-    .select("department")
-    .lean();
-  if (programme?.department) {
+  // Notify admins in any of the module's programme departments that grades
+  // are ready for review. Shared modules span multiple departments, so we
+  // union and dedupe.
+  const programmes = mod.programmeIds.length
+    ? await Programme.find({ _id: { $in: mod.programmeIds } })
+        .select("department")
+        .lean()
+    : [];
+  const departments = Array.from(
+    new Set(
+      programmes
+        .map((p) => p.department)
+        .filter((d): d is string => !!d),
+    ),
+  );
+  if (departments.length) {
     const admins = await User.find({
       role: "admin",
-      department: programme.department,
+      department: { $in: departments },
       isActive: true,
     })
       .select("_id")

@@ -65,7 +65,7 @@ export default async function GradeReportViewPage({
       <div className="print:hidden">
         <PageHeader
           title="Grade report"
-          description={`${mod.code} — ${mod.name} · ${mod.academicYear} · ${mod.semester} · ${mod.programmeName ?? "—"} · Year ${mod.yearLevel}`}
+          description={`${mod.code} — ${mod.name} · ${mod.academicYear} · ${mod.semester} · ${mod.programmesLabel || "—"} · Year ${mod.yearLevel}`}
         />
 
         <div className="mb-4 flex flex-wrap items-center gap-3">
@@ -102,7 +102,7 @@ export default async function GradeReportViewPage({
         </p>
         <h2 className="mt-2 text-sm font-semibold uppercase">Grade Sheet</h2>
         <p className="text-xs">
-          {mod.code} — {mod.name} · {mod.programmeName ?? "—"} · Year{" "}
+          {mod.code} — {mod.name} · {mod.programmesLabel || "—"} · Year{" "}
           {mod.yearLevel} · {mod.academicYear} · {mod.semester} Semester
         </p>
       </div>

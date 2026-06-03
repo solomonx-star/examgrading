@@ -51,12 +51,22 @@ export default async function StudentModulePage({
   }).lean();
   if (!mod) notFound();
 
+  // For a shared module, prefer the student's own programme label when present.
+  const ownProgrammeOid = me.programmeId
+    ? new mongoose.Types.ObjectId(me.programmeId)
+    : null;
+  const displayProgrammeOid =
+    ownProgrammeOid &&
+    mod.programmeIds.some((pid) => String(pid) === String(ownProgrammeOid))
+      ? ownProgrammeOid
+      : (mod.programmeIds[0] ?? null);
+
   const [lecturer, programme, attendance, grade, rule] = await Promise.all([
     mod.lecturerId
       ? User.findById(mod.lecturerId).select("name email").lean()
       : Promise.resolve(null),
-    mod.programmeId
-      ? Programme.findById(mod.programmeId).select("name code").lean()
+    displayProgrammeOid
+      ? Programme.findById(displayProgrammeOid).select("name code").lean()
       : Promise.resolve(null),
     Attendance.find({
       courseId: mod._id,

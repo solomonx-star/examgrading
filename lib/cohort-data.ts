@@ -32,9 +32,10 @@ export async function loadCohortRows(args: {
   if (!mongoose.Types.ObjectId.isValid(programmeId)) return [];
   const programmeOid = new mongoose.Types.ObjectId(programmeId);
 
-  // Cohort modules — the universe of work expected per student
+  // Cohort modules — the universe of work expected per student. Shared
+  // modules list this programme in their `programmeIds` array.
   const courses = await Course.find({
-    programmeId: programmeOid,
+    programmeIds: programmeOid,
     yearLevel,
     academicYear,
     semester,
@@ -183,7 +184,7 @@ export async function loadStudentReviewRows(args: {
   const programmeOid = new mongoose.Types.ObjectId(programmeId);
 
   const courses = await Course.find({
-    programmeId: programmeOid,
+    programmeIds: programmeOid,
     yearLevel,
     academicYear,
     semester,

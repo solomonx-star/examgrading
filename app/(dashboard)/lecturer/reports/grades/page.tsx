@@ -25,13 +25,13 @@ export default async function LecturerGradeReportPickerPage({
   if (yearLevelNum) filter.yearLevel = yearLevelNum;
 
   const courses = await Course.find(filter)
-    .select("code name academicYear semester programmeId yearLevel")
+    .select("code name academicYear semester programmeIds yearLevel")
     .sort({ academicYear: -1, semester: 1, yearLevel: 1, code: 1 })
     .lean();
 
-  const programmeIds = courses
-    .map((c) => c.programmeId)
-    .filter(Boolean) as unknown as string[];
+  const programmeIds = Array.from(
+    new Set(courses.flatMap((c) => c.programmeIds.map(String))),
+  );
   const programmes = await Programme.find({ _id: { $in: programmeIds } })
     .select("name code")
     .lean();
@@ -112,7 +112,10 @@ export default async function LecturerGradeReportPickerPage({
                     </td>
                     <td className="px-4 py-3 text-foreground">{c.name}</td>
                     <td className="px-4 py-3 text-body">
-                      {programmeById.get(String(c.programmeId)) ?? "—"}
+                      {c.programmeIds
+                        .map((pid) => programmeById.get(String(pid)))
+                        .filter((n): n is string => !!n)
+                        .join(", ") || "—"}
                     </td>
                     <td className="px-4 py-3 text-body">Year {c.yearLevel}</td>
                     <td className="px-4 py-3 text-body">

@@ -19,13 +19,23 @@ export default async function LecturerGradeSheetPrintPage({
   const { me, course: mod } = await requireLecturerCourse(id);
 
   await connectDB();
-  const [rows, rule, programme] = await Promise.all([
+  const [rows, rule, programmes] = await Promise.all([
     loadGradeReportRows(id),
     getEffectiveGradingRule(id),
-    mod.programmeId
-      ? Programme.findById(mod.programmeId).select("name code").lean()
-      : Promise.resolve(null),
+    mod.programmeIds.length
+      ? Programme.find({ _id: { $in: mod.programmeIds } })
+          .select("name code")
+          .lean()
+      : Promise.resolve([] as { _id: unknown; name: string; code: string }[]),
   ]);
+  const programmeNameById = new Map(
+    programmes.map((p) => [String(p._id), p.name as string]),
+  );
+  const programmesLabel =
+    mod.programmeIds
+      .map((pid) => programmeNameById.get(String(pid)))
+      .filter((n): n is string => !!n)
+      .join(", ") || "—";
 
   const testWeight = rule?.caWeight ?? 30;
   const examWeight = rule?.examWeight ?? 70;
@@ -91,7 +101,7 @@ export default async function LecturerGradeSheetPrintPage({
           Grade Sheet
         </h2>
         <p className="text-xs text-body">
-          {mod.code} — {mod.name} · {programme?.name ?? "—"} · Year{" "}
+          {mod.code} — {mod.name} · {programmesLabel} · Year{" "}
           {mod.yearLevel} · {mod.academicYear} · {mod.semester} Semester
         </p>
         <p className="mt-1 text-[11px] text-body">

@@ -19,27 +19,31 @@ import {
   type FormState,
 } from "@/lib/form-state";
 
-function pickEnrolled(formData: FormData): string[] {
+function pickIdsFromForm(formData: FormData, field: string): string[] {
   return formData
-    .getAll("enrolledStudents")
+    .getAll(field)
     .map((v) => String(v))
     .filter((v) => /^[a-f\d]{24}$/i.test(v));
 }
 
 /**
- * Cross-checks: programme + lecturer must exist; every enrolled student must
- * be in the same programme + year level as the course.
+ * Cross-checks: every programme + the lecturer must exist; every enrolled
+ * student must belong to one of the module's programmes and match its year.
+ * Shared modules accept students from any listed programme.
  */
 async function validateRefs(
-  programmeId: string,
+  programmeIds: string[],
   yearLevel: number,
   lecturerId: string | undefined,
   enrolled: string[],
 ): Promise<string | null> {
-  const programme = await Programme.findOne({ _id: programmeId })
-    .select("_id")
-    .lean();
-  if (!programme) return "Selected programme does not exist.";
+  const uniqueProgrammes = Array.from(new Set(programmeIds));
+  const programmeCount = await Programme.countDocuments({
+    _id: { $in: uniqueProgrammes },
+  });
+  if (programmeCount !== uniqueProgrammes.length) {
+    return "One or more selected programmes do not exist.";
+  }
 
   if (lecturerId) {
     const ok = await User.exists({ _id: lecturerId, role: "lecturer" });
@@ -50,11 +54,11 @@ async function validateRefs(
     const count = await User.countDocuments({
       _id: { $in: enrolled },
       role: "student",
-      programmeId,
+      programmeId: { $in: uniqueProgrammes },
       yearLevel,
     });
     if (count !== enrolled.length) {
-      return "One or more selected students are not in this programme + year.";
+      return "One or more selected students are not in this module's programmes + year.";
     }
   }
   return null;
@@ -69,19 +73,19 @@ export async function createCourseAction(
   const parsed = courseCreateSchema.safeParse({
     name: formData.get("name"),
     code: formData.get("code"),
-    programmeId: formData.get("programmeId"),
+    programmeIds: pickIdsFromForm(formData, "programmeIds"),
     yearLevel: formData.get("yearLevel"),
     academicYear: formData.get("academicYear"),
     semester: formData.get("semester"),
     lecturerId: formData.get("lecturerId"),
     gradingRuleId: formData.get("gradingRuleId"),
-    enrolledStudents: pickEnrolled(formData),
+    enrolledStudents: pickIdsFromForm(formData, "enrolledStudents"),
   });
   if (!parsed.success) return { ok: false, error: zodToError(parsed.error) };
 
   await connectDB();
   const scopeErr = await validateRefs(
-    parsed.data.programmeId,
+    parsed.data.programmeIds,
     parsed.data.yearLevel,
     parsed.data.lecturerId || undefined,
     parsed.data.enrolledStudents,
@@ -93,7 +97,7 @@ export async function createCourseAction(
     const doc = await Course.create({
       name: parsed.data.name,
       code: parsed.data.code,
-      programmeId: parsed.data.programmeId,
+      programmeIds: parsed.data.programmeIds,
       yearLevel: parsed.data.yearLevel,
       academicYear: parsed.data.academicYear,
       semester: parsed.data.semester,
@@ -134,20 +138,20 @@ export async function updateCourseAction(
   const parsed = courseUpdateSchema.safeParse({
     name: formData.get("name"),
     code: formData.get("code"),
-    programmeId: formData.get("programmeId"),
+    programmeIds: pickIdsFromForm(formData, "programmeIds"),
     yearLevel: formData.get("yearLevel"),
     academicYear: formData.get("academicYear"),
     semester: formData.get("semester"),
     lecturerId: formData.get("lecturerId"),
     gradingRuleId: formData.get("gradingRuleId"),
-    enrolledStudents: pickEnrolled(formData),
+    enrolledStudents: pickIdsFromForm(formData, "enrolledStudents"),
     isActive: formData.get("isActive") === "on",
   });
   if (!parsed.success) return { ok: false, error: zodToError(parsed.error) };
 
   await connectDB();
   const scopeErr = await validateRefs(
-    parsed.data.programmeId,
+    parsed.data.programmeIds,
     parsed.data.yearLevel,
     parsed.data.lecturerId || undefined,
     parsed.data.enrolledStudents,
@@ -161,7 +165,7 @@ export async function updateCourseAction(
         $set: {
           name: parsed.data.name,
           code: parsed.data.code,
-          programmeId: parsed.data.programmeId,
+          programmeIds: parsed.data.programmeIds,
           yearLevel: parsed.data.yearLevel,
           academicYear: parsed.data.academicYear,
           semester: parsed.data.semester,

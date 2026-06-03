@@ -10,7 +10,7 @@ import { useToastFromState } from "@/lib/use-toast-state";
 type Defaults = {
   name: string;
   code: string;
-  programmeId: string;
+  programmeIds: string[];
   yearLevel: number;
   academicYear: string;
   semester: "First" | "Second" | "Summer";
@@ -76,20 +76,32 @@ export function CourseForm({
     successMessage: mode === "create" ? "Module created." : "Module saved.",
   });
 
-  const [programmeId, setProgrammeId] = useState(defaults.programmeId);
+  const [programmeIds, setProgrammeIds] = useState<Set<string>>(
+    () => new Set(defaults.programmeIds),
+  );
   const [yearLevel, setYearLevel] = useState<number>(defaults.yearLevel);
   const [enrolled, setEnrolled] = useState<Set<string>>(
     () => new Set(defaults.enrolledStudents),
   );
   const [studentFilter, setStudentFilter] = useState("");
 
-  // Restrict the enrolment pool to students matching the chosen (programme, year)
+  function toggleProgramme(id: string) {
+    setProgrammeIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  // Restrict the enrolment pool to students whose programme is one of the
+  // selected programmes AND whose year matches.
   const eligibleStudents = useMemo(
     () =>
       choices.students.filter(
-        (s) => s.programmeId === programmeId && s.yearLevel === yearLevel,
+        (s) => programmeIds.has(s.programmeId) && s.yearLevel === yearLevel,
       ),
-    [choices.students, programmeId, yearLevel],
+    [choices.students, programmeIds, yearLevel],
   );
   const filteredStudents = useMemo(() => {
     const q = studentFilter.trim().toLowerCase();
@@ -101,8 +113,8 @@ export function CourseForm({
     );
   }, [studentFilter, eligibleStudents]);
 
-  // If the programme or year changes, drop any currently-selected students who
-  // no longer match — prevents accidentally enrolling Year 2s in a Year 1 course.
+  // If the programme set or year changes, drop any currently-selected students
+  // who no longer match.
   useEffect(() => {
     setEnrolled((prev) => {
       if (prev.size === 0) return prev;
@@ -134,6 +146,8 @@ export function CourseForm({
     setEnrolled(new Set());
   }
 
+  const programmesPicked = programmeIds.size;
+
   return (
     <form
       action={formAction}
@@ -142,19 +156,6 @@ export function CourseForm({
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field id="code" label="Module code" defaultValue={defaults.code} required />
         <Field id="name" label="Module name" defaultValue={defaults.name} required />
-        <Select
-          id="programmeId"
-          label="Programme"
-          value={programmeId}
-          onChange={(v) => setProgrammeId(v)}
-          options={[
-            { value: "", label: "— Select programme —" },
-            ...choices.programmes.map((p) => ({
-              value: p.id,
-              label: `${p.name} (${p.code})`,
-            })),
-          ]}
-        />
         <Select
           id="yearLevel"
           label="Year level"
@@ -223,12 +224,59 @@ export function CourseForm({
         ) : null}
       </div>
 
+      <fieldset className="rounded-lg border border-stroke p-4">
+        <legend className="px-1 text-sm font-semibold text-foreground">
+          Programmes{" "}
+          <span className="font-normal text-body">
+            ({programmesPicked} selected)
+          </span>
+        </legend>
+        <p className="mb-3 text-xs text-body">
+          Tick every programme whose students take this module. A module shared
+          between (for example) Diploma and BSc Computer Science should have
+          both ticked — the enrolment list below will then include eligible
+          students from each programme.
+        </p>
+        {choices.programmes.length === 0 ? (
+          <p className="text-sm text-body">No programmes available.</p>
+        ) : (
+          <ul className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+            {choices.programmes.map((p) => {
+              const checked = programmeIds.has(p.id);
+              return (
+                <li key={p.id}>
+                  <label className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-foreground hover:bg-whiter">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggleProgramme(p.id)}
+                      className="h-4 w-4 rounded border-stroke text-primary focus:ring-primary"
+                    />
+                    <span>
+                      {p.name}{" "}
+                      <span className="font-mono text-xs text-body">
+                        ({p.code})
+                      </span>
+                    </span>
+                  </label>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+        {[...programmeIds].map((id) => (
+          <input key={id} type="hidden" name="programmeIds" value={id} />
+        ))}
+      </fieldset>
+
       <div>
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
           <h3 className="text-sm font-semibold text-foreground">
             Enrolment <span className="font-normal text-body">({enrolled.size} selected)</span>
             <span className="ml-2 text-xs font-normal text-body">
-              {programmeId ? `Eligible: ${eligibleStudents.length}` : "Select a programme to see eligible students"}
+              {programmesPicked > 0
+                ? `Eligible: ${eligibleStudents.length}`
+                : "Tick a programme to see eligible students"}
             </span>
           </h3>
           <div className="flex items-center gap-2">
@@ -258,9 +306,9 @@ export function CourseForm({
         <div className="max-h-72 overflow-y-auto rounded-lg border border-stroke">
           {filteredStudents.length === 0 ? (
             <p className="p-3 text-sm text-body">
-              {programmeId
-                ? "No students match this programme + year."
-                : "Select a programme + year first."}
+              {programmesPicked > 0
+                ? "No students match the selected programmes + year."
+                : "Tick a programme + year first."}
             </p>
           ) : (
             <ul className="divide-y divide-stroke">
@@ -297,7 +345,6 @@ export function CourseForm({
           )}
         </div>
 
-        {/* Hidden inputs carry the actual enrolment list to the server action */}
         {[...enrolled].map((id) => (
           <input
             key={id}

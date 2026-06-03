@@ -69,7 +69,7 @@ export default async function LecturerGradeReportViewPage({
       <div className="print:hidden">
         <PageHeader
           title="Grade report"
-          description={`${mod.code} — ${mod.name} · ${mod.academicYear} · ${mod.semester} · ${mod.programmeName ?? "—"} · Year ${mod.yearLevel}`}
+          description={`${mod.code} — ${mod.name} · ${mod.academicYear} · ${mod.semester} · ${mod.programmesLabel || "—"} · Year ${mod.yearLevel}`}
         />
 
         <div className="mb-4 flex flex-wrap items-center gap-3">

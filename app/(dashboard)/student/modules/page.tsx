@@ -21,7 +21,11 @@ export default async function StudentModulesPage() {
     getAttendanceStatsForStudent(me.userId, ids),
     getPublishedGradesForStudent(me.userId),
     Programme.find({
-      _id: { $in: Array.from(new Set(modules.map((m) => m.programmeId))) },
+      _id: {
+        $in: Array.from(
+          new Set(modules.flatMap((m) => m.programmeIds)),
+        ),
+      },
     })
       .select("name code")
       .lean(),
@@ -78,7 +82,16 @@ export default async function StudentModulesPage() {
               modules.map((m) => {
                 const att = attStats.get(m.id);
                 const grade = gradeByModule.get(m.id);
-                const programme = programmeById.get(m.programmeId);
+                // Prefer the student's own programme if this module is shared
+                // across multiple programmes — otherwise just show the first.
+                const ownPid = me.programmeId ?? null;
+                const matchedPid =
+                  ownPid && m.programmeIds.includes(ownPid)
+                    ? ownPid
+                    : m.programmeIds[0];
+                const programme = matchedPid
+                  ? programmeById.get(matchedPid)
+                  : undefined;
                 return (
                   <tr key={m.id} className="hover:bg-whiter">
                     <td className="hidden px-4 py-3 font-mono text-xs text-foreground sm:table-cell">

@@ -172,7 +172,7 @@ async function moduleIdsForCohort(
   semester: "First" | "Second" | "Summer",
 ): Promise<mongoose.Types.ObjectId[]> {
   const modules = await Module.find({
-    programmeId,
+    programmeIds: programmeId,
     yearLevel,
     academicYear,
     semester,

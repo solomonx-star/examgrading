@@ -35,12 +35,12 @@ export default async function GradeReportPickerPage({
   const selectedProgrammeId = sp.programmeId ?? "";
 
   const filter: Record<string, unknown> = {};
-  if (selectedProgrammeId) filter.programmeId = selectedProgrammeId;
+  if (selectedProgrammeId) filter.programmeIds = selectedProgrammeId;
   if (yearLevelNum) filter.yearLevel = yearLevelNum;
 
   const courses = await Course.find(filter)
     .select(
-      "code name lecturerId academicYear semester programmeId yearLevel isActive",
+      "code name lecturerId academicYear semester programmeIds yearLevel isActive",
     )
     .sort({ academicYear: -1, semester: 1, yearLevel: 1, code: 1 })
     .lean();
@@ -139,16 +139,18 @@ export default async function GradeReportPickerPage({
             ) : (
               courses.map((c) => {
                 const id = String(c._id);
-                const prog = programmeById.get(String(c.programmeId));
+                const programmesLabel =
+                  c.programmeIds
+                    .map((pid) => programmeById.get(String(pid))?.name)
+                    .filter((n): n is string => !!n)
+                    .join(", ") || "—";
                 return (
                   <tr key={id} className="hover:bg-whiter">
                     <td className="px-4 py-3 font-mono text-xs text-foreground">
                       {c.code}
                     </td>
                     <td className="px-4 py-3 text-foreground">{c.name}</td>
-                    <td className="px-4 py-3 text-body">
-                      {prog?.name ?? "—"}
-                    </td>
+                    <td className="px-4 py-3 text-body">{programmesLabel}</td>
                     <td className="px-4 py-3 text-body">Year {c.yearLevel}</td>
                     <td className="px-4 py-3 text-body">
                       {c.academicYear} · {c.semester}

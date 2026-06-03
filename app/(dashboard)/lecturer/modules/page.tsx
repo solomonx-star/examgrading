@@ -13,13 +13,13 @@ export default async function LecturerModulesPage() {
 
   const courses = await Course.find({ lecturerId: me.userId })
     .select(
-      "code name creditHours programmeId yearLevel academicYear semester enrolledStudents isActive",
+      "code name creditHours programmeIds yearLevel academicYear semester enrolledStudents isActive",
     )
     .sort({ academicYear: -1, semester: 1, yearLevel: 1, code: 1 })
     .lean();
 
   const programmeIds = Array.from(
-    new Set(courses.map((c) => String(c.programmeId))),
+    new Set(courses.flatMap((c) => c.programmeIds.map(String))),
   );
   const programmes = await Programme.find({
     _id: { $in: programmeIds },
@@ -66,7 +66,11 @@ export default async function LecturerModulesPage() {
             ) : (
               courses.map((c) => {
                 const id = String(c._id);
-                const programme = programmeById.get(String(c.programmeId));
+                const programmesLabel =
+                  c.programmeIds
+                    .map((pid) => programmeById.get(String(pid))?.name)
+                    .filter((n): n is string => !!n)
+                    .join(", ") || "—";
                 return (
                   <tr key={id} className="hover:bg-whiter">
                     <td className="hidden px-4 py-3 font-mono text-xs text-foreground sm:table-cell">
@@ -84,7 +88,7 @@ export default async function LecturerModulesPage() {
                       </Link>
                     </td>
                     <td className="hidden px-4 py-3 text-body lg:table-cell">
-                      {programme?.name ?? "—"}
+                      {programmesLabel}
                     </td>
                     <td className="px-4 py-3 text-body">Year {c.yearLevel}</td>
                     <td className="hidden px-4 py-3 text-body lg:table-cell">

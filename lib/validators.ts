@@ -69,7 +69,9 @@ export const courseCreateSchema = z.object({
     .trim()
     .toUpperCase()
     .min(2, "Module code is required"),
-  programmeId: objectIdSchema,
+  programmeIds: z
+    .array(objectIdSchema)
+    .min(1, "Pick at least one programme for this module"),
   yearLevel: z.coerce.number().int().min(1).max(4),
   academicYear: z
     .string()
