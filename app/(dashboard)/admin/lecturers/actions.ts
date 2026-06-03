@@ -5,6 +5,10 @@ import { redirect } from "next/navigation";
 import mongoose from "mongoose";
 import { connectDB } from "@/lib/db";
 import { User } from "@/models/User";
+import { Course } from "@/models/Course";
+import { Grade } from "@/models/Grade";
+import { Attendance } from "@/models/Attendance";
+import { Notification } from "@/models/Notification";
 import { requireAdminScope } from "@/lib/admin-scope";
 import { DEFAULT_PASSWORD } from "@/lib/constants";
 import {
@@ -135,6 +139,54 @@ export async function toggleLecturerActiveAction(id: string): Promise<void> {
     entityId: id,
   });
   revalidatePath("/admin/lecturers");
+}
+
+export async function deleteLecturerAction(
+  id: string,
+): Promise<{ ok: boolean; error?: string }> {
+  await requireAdminScope();
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return { ok: false, error: "Invalid lecturer id." };
+  }
+  await connectDB();
+  const user = await User.findOne({ _id: id, role: "lecturer" })
+    .select("name email")
+    .lean();
+  if (!user) return { ok: false, error: "Lecturer not found." };
+
+  const lecturerOid = new mongoose.Types.ObjectId(id);
+  const [assignedToCourse, hasGrades, hasAttendance] = await Promise.all([
+    Course.exists({ lecturerId: lecturerOid }),
+    Grade.exists({ lecturerId: lecturerOid }),
+    Attendance.exists({ lecturerId: lecturerOid }),
+  ]);
+  if (assignedToCourse) {
+    return {
+      ok: false,
+      error:
+        "Lecturer is assigned to one or more modules. Reassign the modules first.",
+    };
+  }
+  if (hasGrades || hasAttendance) {
+    return {
+      ok: false,
+      error:
+        "Lecturer has grade or attendance records on file. For audit compliance, deactivate instead of deleting.",
+    };
+  }
+
+  await Notification.deleteMany({ userId: lecturerOid });
+  await User.deleteOne({ _id: lecturerOid });
+
+  await audit({
+    action: "lecturer.delete",
+    summary: `Deleted lecturer ${user.name} (${user.email})`,
+    entityType: "User",
+    entityId: id,
+  });
+  revalidatePath("/admin/lecturers");
+  revalidatePath("/admin");
+  return { ok: true };
 }
 
 export async function resetLecturerPasswordAction(id: string): Promise<void> {

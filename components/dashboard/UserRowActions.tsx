@@ -9,12 +9,16 @@ export function UserRowActions({
   isActive,
   onToggle,
   onResetPassword,
+  onDelete,
+  deleteNoun = "user",
   toggleLabel,
 }: {
   editHref: string;
   isActive: boolean;
   onToggle: () => Promise<void> | void;
   onResetPassword: () => Promise<void> | void;
+  onDelete?: () => Promise<{ ok: boolean; error?: string }>;
+  deleteNoun?: string;
   toggleLabel?: { active: string; inactive: string };
 }) {
   const [pending, startTransition] = useTransition();
@@ -50,6 +54,25 @@ export function UserRowActions({
     });
   }
 
+  function handleDelete() {
+    if (!onDelete) return;
+    if (
+      !confirm(
+        `Permanently delete this ${deleteNoun}? This cannot be undone. The action will be blocked if academic records exist.`,
+      )
+    )
+      return;
+    startTransition(async () => {
+      try {
+        const res = await onDelete();
+        if (res.ok) toast.success(`${cap(deleteNoun)} deleted.`);
+        else toast.error(res.error ?? `Could not delete ${deleteNoun}.`);
+      } catch {
+        toast.error(`Could not delete ${deleteNoun}.`);
+      }
+    });
+  }
+
   return (
     <div className="inline-flex items-center gap-2">
       <Link
@@ -79,6 +102,20 @@ export function UserRowActions({
       >
         {isActive ? labels.active : labels.inactive}
       </button>
+      {onDelete ? (
+        <button
+          type="button"
+          onClick={handleDelete}
+          disabled={pending}
+          className="rounded-md border border-stroke px-2.5 py-1 text-xs font-medium text-meta-1 hover:border-meta-1 disabled:opacity-40"
+        >
+          Delete
+        </button>
+      ) : null}
     </div>
   );
+}
+
+function cap(s: string): string {
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 }

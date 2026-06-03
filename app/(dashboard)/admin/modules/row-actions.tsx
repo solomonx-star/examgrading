@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useTransition } from "react";
 import { toast } from "sonner";
-import { toggleCourseActiveAction } from "./actions";
+import { deleteCourseAction, toggleCourseActiveAction } from "./actions";
 
 export function ModuleRowActions({
   id,
@@ -23,6 +23,24 @@ export function ModuleRowActions({
         toast.success(`Course ${isActive ? "deactivated" : "reactivated"}.`);
       } catch {
         toast.error(`Could not ${verb} this course.`);
+      }
+    });
+  }
+
+  function handleDelete() {
+    if (
+      !confirm(
+        "Permanently delete this module? This cannot be undone. Delete will be blocked if grades or attendance exist.",
+      )
+    )
+      return;
+    startTransition(async () => {
+      try {
+        const res = await deleteCourseAction(id);
+        if (res.ok) toast.success("Module deleted.");
+        else toast.error(res.error ?? "Could not delete module.");
+      } catch {
+        toast.error("Could not delete module.");
       }
     });
   }
@@ -47,6 +65,14 @@ export function ModuleRowActions({
         }
       >
         {isActive ? "Deactivate" : "Reactivate"}
+      </button>
+      <button
+        type="button"
+        onClick={handleDelete}
+        disabled={pending}
+        className="rounded-md border border-stroke px-2.5 py-1 text-xs font-medium text-meta-1 hover:border-meta-1 disabled:opacity-40"
+      >
+        Delete
       </button>
     </div>
   );

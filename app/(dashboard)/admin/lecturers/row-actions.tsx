@@ -2,6 +2,7 @@
 
 import { UserRowActions } from "@/components/dashboard/UserRowActions";
 import {
+  deleteLecturerAction,
   resetLecturerPasswordAction,
   toggleLecturerActiveAction,
 } from "./actions";
@@ -19,6 +20,8 @@ export function LecturerRowActions({
       isActive={isActive}
       onToggle={() => toggleLecturerActiveAction(id)}
       onResetPassword={() => resetLecturerPasswordAction(id)}
+      onDelete={() => deleteLecturerAction(id)}
+      deleteNoun="lecturer"
     />
   );
 }

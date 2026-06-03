@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useTransition } from "react";
 import { toast } from "sonner";
 import {
+  deleteAdminAction,
   resetAdminPasswordAction,
   toggleAdminActiveAction,
 } from "./actions";
@@ -47,6 +48,24 @@ export function AdminRowActions({
     });
   }
 
+  function handleDelete() {
+    if (
+      !confirm(
+        "Permanently delete this admin account? This cannot be undone.",
+      )
+    )
+      return;
+    startTransition(async () => {
+      try {
+        const res = await deleteAdminAction(id);
+        if (res.ok) toast.success("Admin deleted.");
+        else toast.error(res.error ?? "Could not delete admin.");
+      } catch {
+        toast.error("Could not delete admin.");
+      }
+    });
+  }
+
   return (
     <div className="inline-flex items-center gap-2">
       <Link
@@ -75,6 +94,14 @@ export function AdminRowActions({
         }
       >
         {isActive ? "Deactivate" : "Reactivate"}
+      </button>
+      <button
+        type="button"
+        onClick={handleDelete}
+        disabled={pending}
+        className="rounded-md border border-stroke px-2.5 py-1 text-xs font-medium text-meta-1 hover:border-meta-1 disabled:opacity-40"
+      >
+        Delete
       </button>
     </div>
   );

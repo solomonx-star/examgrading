@@ -6,6 +6,11 @@ import mongoose from "mongoose";
 import { connectDB } from "@/lib/db";
 import { User } from "@/models/User";
 import { Programme } from "@/models/Programme";
+import { Course } from "@/models/Course";
+import { Grade } from "@/models/Grade";
+import { Attendance } from "@/models/Attendance";
+import { AccessPayment } from "@/models/AccessPayment";
+import { Notification } from "@/models/Notification";
 import { requireAdminScope } from "@/lib/admin-scope";
 import { DEFAULT_PASSWORD } from "@/lib/constants";
 import {
@@ -155,6 +160,66 @@ export async function toggleStudentActiveAction(id: string): Promise<void> {
     entityId: id,
   });
   revalidatePath("/admin/students");
+}
+
+export async function deleteStudentAction(
+  id: string,
+): Promise<{ ok: boolean; error?: string }> {
+  await requireAdminScope();
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return { ok: false, error: "Invalid student id." };
+  }
+  await connectDB();
+  const user = await User.findOne({ _id: id, role: "student" })
+    .select("name email")
+    .lean();
+  if (!user) return { ok: false, error: "Student not found." };
+
+  const studentOid = new mongoose.Types.ObjectId(id);
+  const [hasGrades, hasAttendance, hasPayments] = await Promise.all([
+    Grade.exists({ studentId: studentOid }),
+    Attendance.exists({ studentId: studentOid }),
+    AccessPayment.exists({ student: studentOid }),
+  ]);
+  if (hasGrades) {
+    return {
+      ok: false,
+      error:
+        "Student has grade records. Clear them first, or deactivate the student instead.",
+    };
+  }
+  if (hasAttendance) {
+    return {
+      ok: false,
+      error:
+        "Student has attendance records. Clear them first, or deactivate the student instead.",
+    };
+  }
+  if (hasPayments) {
+    return {
+      ok: false,
+      error:
+        "Student has access-fee payment history. For audit compliance, deactivate instead of deleting.",
+    };
+  }
+
+  // Safe to delete — also clean enrolment lists and unread notifications.
+  await Course.updateMany(
+    { enrolledStudents: studentOid },
+    { $pull: { enrolledStudents: studentOid } },
+  );
+  await Notification.deleteMany({ userId: studentOid });
+  await User.deleteOne({ _id: studentOid });
+
+  await audit({
+    action: "student.delete",
+    summary: `Deleted student ${user.name} (${user.email})`,
+    entityType: "User",
+    entityId: id,
+  });
+  revalidatePath("/admin/students");
+  revalidatePath("/admin");
+  return { ok: true };
 }
 
 export async function resetStudentPasswordAction(id: string): Promise<void> {

@@ -7,6 +7,8 @@ import { connectDB } from "@/lib/db";
 import { Course } from "@/models/Course";
 import { Programme } from "@/models/Programme";
 import { User } from "@/models/User";
+import { Grade } from "@/models/Grade";
+import { Attendance } from "@/models/Attendance";
 import { requireAdminScope } from "@/lib/admin-scope";
 import {
   courseCreateSchema,
@@ -211,4 +213,49 @@ export async function toggleCourseActiveAction(id: string): Promise<void> {
     entityId: id,
   });
   revalidatePath("/admin/modules");
+}
+
+export async function deleteCourseAction(
+  id: string,
+): Promise<{ ok: boolean; error?: string }> {
+  await requireAdminScope();
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return { ok: false, error: "Invalid module id." };
+  }
+  await connectDB();
+  const mod = await Course.findById(id).select("code name").lean();
+  if (!mod) return { ok: false, error: "Module not found." };
+
+  // Refuse if anything academic refs this module — grades and attendance
+  // are regulatory and must not vanish silently.
+  const moduleOid = new mongoose.Types.ObjectId(id);
+  const [hasGrades, hasAttendance] = await Promise.all([
+    Grade.exists({ courseId: moduleOid }),
+    Attendance.exists({ courseId: moduleOid }),
+  ]);
+  if (hasGrades) {
+    return {
+      ok: false,
+      error:
+        "Module has grade records. Unpublish and clear them first, or deactivate the module instead.",
+    };
+  }
+  if (hasAttendance) {
+    return {
+      ok: false,
+      error:
+        "Module has attendance records. Clear them first, or deactivate the module instead.",
+    };
+  }
+
+  await Course.deleteOne({ _id: moduleOid });
+  await audit({
+    action: "module.delete",
+    summary: `Deleted module ${mod.code} — ${mod.name}`,
+    entityType: "Course",
+    entityId: id,
+  });
+  revalidatePath("/admin/modules");
+  revalidatePath("/admin");
+  return { ok: true };
 }

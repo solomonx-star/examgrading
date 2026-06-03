@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import mongoose from "mongoose";
 import { connectDB } from "@/lib/db";
 import { User } from "@/models/User";
+import { Notification } from "@/models/Notification";
 import { auth } from "@/lib/auth";
 import { DEFAULT_PASSWORD } from "@/lib/constants";
 import {
@@ -143,6 +144,37 @@ export async function toggleAdminActiveAction(id: string): Promise<void> {
     entityId: id,
   });
   revalidatePath("/superadmin/admins");
+}
+
+export async function deleteAdminAction(
+  id: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const session = await requireSuperAdmin();
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return { ok: false, error: "Invalid admin id." };
+  }
+  if (session.user?.id === id) {
+    return { ok: false, error: "You can't delete your own account." };
+  }
+  await connectDB();
+  const user = await User.findOne({ _id: id, role: "admin" })
+    .select("name email")
+    .lean();
+  if (!user) return { ok: false, error: "Admin not found." };
+
+  const adminOid = new mongoose.Types.ObjectId(id);
+  await Notification.deleteMany({ userId: adminOid });
+  await User.deleteOne({ _id: adminOid });
+
+  await audit({
+    action: "admin.delete",
+    summary: `Deleted admin ${user.name} (${user.email})`,
+    entityType: "User",
+    entityId: id,
+  });
+  revalidatePath("/superadmin/admins");
+  revalidatePath("/superadmin");
+  return { ok: true };
 }
 
 export async function resetAdminPasswordAction(id: string): Promise<void> {
