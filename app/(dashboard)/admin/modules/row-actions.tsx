@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { toast } from "sonner";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { deleteCourseAction, toggleCourseActiveAction } from "./actions";
 
 export function ModuleRowActions({
@@ -13,32 +14,33 @@ export function ModuleRowActions({
   isActive: boolean;
 }) {
   const [pending, startTransition] = useTransition();
+  const [confirming, setConfirming] = useState<"toggle" | "delete" | null>(
+    null,
+  );
 
   function handleToggle() {
     const verb = isActive ? "deactivate" : "reactivate";
-    if (!confirm(`Are you sure you want to ${verb} this course?`)) return;
     startTransition(async () => {
       try {
         await toggleCourseActiveAction(id);
-        toast.success(`Course ${isActive ? "deactivated" : "reactivated"}.`);
+        toast.success(`Module ${isActive ? "deactivated" : "reactivated"}.`);
+        setConfirming(null);
       } catch {
-        toast.error(`Could not ${verb} this course.`);
+        toast.error(`Could not ${verb} this module.`);
       }
     });
   }
 
   function handleDelete() {
-    if (
-      !confirm(
-        "Permanently delete this module? This cannot be undone. Delete will be blocked if grades or attendance exist.",
-      )
-    )
-      return;
     startTransition(async () => {
       try {
         const res = await deleteCourseAction(id);
-        if (res.ok) toast.success("Module deleted.");
-        else toast.error(res.error ?? "Could not delete module.");
+        if (res.ok) {
+          toast.success("Module deleted.");
+          setConfirming(null);
+        } else {
+          toast.error(res.error ?? "Could not delete module.");
+        }
       } catch {
         toast.error("Could not delete module.");
       }
@@ -55,7 +57,7 @@ export function ModuleRowActions({
       </Link>
       <button
         type="button"
-        onClick={handleToggle}
+        onClick={() => setConfirming("toggle")}
         disabled={pending}
         className={
           "rounded-md px-2.5 py-1 text-xs font-medium transition disabled:opacity-60 " +
@@ -68,12 +70,36 @@ export function ModuleRowActions({
       </button>
       <button
         type="button"
-        onClick={handleDelete}
+        onClick={() => setConfirming("delete")}
         disabled={pending}
         className="rounded-md border border-stroke px-2.5 py-1 text-xs font-medium text-meta-1 hover:border-meta-1 disabled:opacity-40"
       >
         Delete
       </button>
+      <ConfirmModal
+        open={confirming === "toggle"}
+        title={isActive ? "Deactivate this module?" : "Reactivate this module?"}
+        description={
+          isActive
+            ? "Students will lose access to the module. Existing grades and attendance stay intact and the module can be reactivated later."
+            : "Students will regain access to the module."
+        }
+        confirmLabel={isActive ? "Deactivate" : "Reactivate"}
+        tone={isActive ? "danger" : "primary"}
+        pending={pending}
+        onConfirm={handleToggle}
+        onCancel={() => setConfirming(null)}
+      />
+      <ConfirmModal
+        open={confirming === "delete"}
+        title="Delete this module?"
+        description="This cannot be undone. The delete will be blocked if grades or attendance records exist for the module."
+        confirmLabel="Delete module"
+        tone="danger"
+        pending={pending}
+        onConfirm={handleDelete}
+        onCancel={() => setConfirming(null)}
+      />
     </div>
   );
 }

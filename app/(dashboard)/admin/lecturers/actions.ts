@@ -68,7 +68,7 @@ export async function createLecturerAction(
   });
   revalidatePath("/admin/lecturers");
   revalidatePath("/admin");
-  redirect("/admin/lecturers");
+  redirect("/admin/lecturers?created=1");
 }
 
 export async function updateLecturerAction(

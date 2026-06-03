@@ -5,13 +5,19 @@ import { Programme } from "@/models/Programme";
 import { requireAdminScope } from "@/lib/admin-scope";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StudentRowActions } from "./row-actions";
+import { CreateFlash } from "@/components/dashboard/CreateFlash";
 
 export const dynamic = "force-dynamic";
 
 export default async function StudentsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; programme?: string; year?: string }>;
+  searchParams: Promise<{
+    q?: string;
+    programme?: string;
+    year?: string;
+    created?: string;
+  }>;
 }) {
   await requireAdminScope();
   const sp = await searchParams;
@@ -50,6 +56,7 @@ export default async function StudentsPage({
 
   return (
     <div>
+      <CreateFlash created={sp.created} message="Student created." />
       <PageHeader
         title="Students"
         description="All students on the platform"

@@ -110,6 +110,7 @@ export async function createCourseAction(
     });
     createdId = String(doc._id);
   } catch (err) {
+    console.error("createCourseAction failed:", err);
     const dup = mongoDuplicateMessage(err);
     if (dup) return { ok: false, error: dup };
     return { ok: false, error: "Could not create module." };
@@ -124,7 +125,7 @@ export async function createCourseAction(
   });
   revalidatePath("/admin/modules");
   revalidatePath("/admin");
-  redirect("/admin/modules");
+  redirect("/admin/modules?created=1");
 }
 
 export async function updateCourseAction(
@@ -181,6 +182,7 @@ export async function updateCourseAction(
     );
     if (!updated) return { ok: false, error: "Module not found." };
   } catch (err) {
+    console.error("updateCourseAction failed:", err);
     const dup = mongoDuplicateMessage(err);
     if (dup) return { ok: false, error: dup };
     return { ok: false, error: "Could not update module." };

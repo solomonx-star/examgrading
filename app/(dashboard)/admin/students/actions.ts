@@ -83,7 +83,7 @@ export async function createStudentAction(
   });
   revalidatePath("/admin/students");
   revalidatePath("/admin");
-  redirect("/admin/students");
+  redirect("/admin/students?created=1");
 }
 
 export async function updateStudentAction(

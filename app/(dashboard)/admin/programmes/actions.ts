@@ -53,7 +53,7 @@ export async function createProgrammeAction(
   });
   revalidatePath("/admin/programmes");
   revalidatePath("/admin");
-  redirect("/admin/programmes");
+  redirect("/admin/programmes?created=1");
 }
 
 export async function updateProgrammeAction(

@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { toast } from "sonner";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import {
   deleteProgrammeAction,
   toggleProgrammeActiveAction,
@@ -16,14 +17,17 @@ export function ProgrammeRowActions({
   isActive: boolean;
 }) {
   const [pending, startTransition] = useTransition();
+  const [confirming, setConfirming] = useState<"toggle" | "delete" | null>(
+    null,
+  );
 
   function handleToggle() {
     const verb = isActive ? "deactivate" : "reactivate";
-    if (!confirm(`Are you sure you want to ${verb} this programme?`)) return;
     startTransition(async () => {
       try {
         await toggleProgrammeActiveAction(id);
         toast.success(`Programme ${isActive ? "deactivated" : "reactivated"}.`);
+        setConfirming(null);
       } catch {
         toast.error(`Could not ${verb} this programme.`);
       }
@@ -31,12 +35,12 @@ export function ProgrammeRowActions({
   }
 
   function handleDelete() {
-    if (!confirm("Delete this programme? Modules must be removed first.")) return;
     startTransition(async () => {
       try {
         const result = await deleteProgrammeAction(id);
         if (result.ok) {
           toast.success("Programme deleted.");
+          setConfirming(null);
         } else {
           toast.error(result.error ?? "Could not delete.");
         }
@@ -56,7 +60,7 @@ export function ProgrammeRowActions({
       </Link>
       <button
         type="button"
-        onClick={handleToggle}
+        onClick={() => setConfirming("toggle")}
         disabled={pending}
         className={
           "rounded-md px-2.5 py-1 text-xs font-medium transition disabled:opacity-60 " +
@@ -69,12 +73,38 @@ export function ProgrammeRowActions({
       </button>
       <button
         type="button"
-        onClick={handleDelete}
+        onClick={() => setConfirming("delete")}
         disabled={pending}
         className="rounded-md border border-stroke px-2.5 py-1 text-xs font-medium text-meta-1 hover:border-meta-1 disabled:opacity-40"
       >
         Delete
       </button>
+      <ConfirmModal
+        open={confirming === "toggle"}
+        title={
+          isActive ? "Deactivate this programme?" : "Reactivate this programme?"
+        }
+        description={
+          isActive
+            ? "New students cannot be assigned to this programme while it is deactivated. It can be reactivated later."
+            : "Students can be assigned to this programme again."
+        }
+        confirmLabel={isActive ? "Deactivate" : "Reactivate"}
+        tone={isActive ? "danger" : "primary"}
+        pending={pending}
+        onConfirm={handleToggle}
+        onCancel={() => setConfirming(null)}
+      />
+      <ConfirmModal
+        open={confirming === "delete"}
+        title="Delete this programme?"
+        description="This cannot be undone. Any modules attached to this programme must be removed first."
+        confirmLabel="Delete programme"
+        tone="danger"
+        pending={pending}
+        onConfirm={handleDelete}
+        onCancel={() => setConfirming(null)}
+      />
     </div>
   );
 }

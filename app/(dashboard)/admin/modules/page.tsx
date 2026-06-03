@@ -6,13 +6,20 @@ import { User } from "@/models/User";
 import { requireAdminScope } from "@/lib/admin-scope";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { ModuleRowActions } from "./row-actions";
+import { CreateFlash } from "@/components/dashboard/CreateFlash";
 
 export const dynamic = "force-dynamic";
 
 export default async function CoursesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; programme?: string; year?: string }>;
+  searchParams: Promise<{
+    q?: string;
+    programme?: string;
+    year?: string;
+    semester?: string;
+    created?: string;
+  }>;
 }) {
   await requireAdminScope();
   const sp = await searchParams;
@@ -32,6 +39,13 @@ export default async function CoursesPage({
   }
   if (sp.year && /^[1-4]$/.test(sp.year)) {
     filter.yearLevel = Number(sp.year);
+  }
+  if (
+    sp.semester === "First" ||
+    sp.semester === "Second" ||
+    sp.semester === "Summer"
+  ) {
+    filter.semester = sp.semester;
   }
   if (q) {
     const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
@@ -57,6 +71,7 @@ export default async function CoursesPage({
 
   return (
     <div>
+      <CreateFlash created={sp.created} message="Module created." />
       <PageHeader
         title="Modules"
         description="All modules on the platform"
@@ -92,6 +107,16 @@ export default async function CoursesPage({
           <option value="2">Year 2</option>
           <option value="3">Year 3</option>
           <option value="4">Year 4</option>
+        </select>
+        <select
+          name="semester"
+          defaultValue={sp.semester ?? ""}
+          className="rounded-lg border border-stroke bg-white px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+        >
+          <option value="">All semesters</option>
+          <option value="First">First</option>
+          <option value="Second">Second</option>
+          <option value="Summer">Summer</option>
         </select>
         <button
           type="submit"

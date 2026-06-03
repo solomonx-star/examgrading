@@ -5,13 +5,14 @@ import { Module } from "@/models/Module";
 import { requireAdminScope } from "@/lib/admin-scope";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { LecturerRowActions } from "./row-actions";
+import { CreateFlash } from "@/components/dashboard/CreateFlash";
 
 export const dynamic = "force-dynamic";
 
 export default async function LecturersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; created?: string }>;
 }) {
   await requireAdminScope();
   const sp = await searchParams;
@@ -42,6 +43,7 @@ export default async function LecturersPage({
 
   return (
     <div>
+      <CreateFlash created={sp.created} message="Lecturer created." />
       <PageHeader
         title="Lecturers"
         description="All lecturers on the platform"
