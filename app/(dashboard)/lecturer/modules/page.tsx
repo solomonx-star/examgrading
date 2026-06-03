@@ -19,7 +19,7 @@ export default async function LecturerModulesPage() {
     .lean();
 
   const programmeIds = Array.from(
-    new Set(courses.flatMap((c) => c.programmeIds.map(String))),
+    new Set(courses.flatMap((c) => (c.programmeIds ?? []).map(String))),
   );
   const programmes = await Programme.find({
     _id: { $in: programmeIds },
@@ -67,7 +67,7 @@ export default async function LecturerModulesPage() {
               courses.map((c) => {
                 const id = String(c._id);
                 const programmesLabel =
-                  c.programmeIds
+                  (c.programmeIds ?? [])
                     .map((pid) => programmeById.get(String(pid))?.name)
                     .filter((n): n is string => !!n)
                     .join(", ") || "—";

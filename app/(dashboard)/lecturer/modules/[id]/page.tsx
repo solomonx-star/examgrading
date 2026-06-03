@@ -55,7 +55,7 @@ export default async function LecturerCoursePage({
         },
       },
     ]),
-    Programme.find({ _id: { $in: mod.programmeIds } })
+    Programme.find({ _id: { $in: mod.programmeIds ?? [] } })
       .select("name code")
       .lean(),
   ]);
@@ -64,7 +64,10 @@ export default async function LecturerCoursePage({
   const programmeNameById = new Map(
     programmes.map((p) => [String(p._id), p.name as string]),
   );
-  const programmesLabel = joinProgrammes(mod.programmeIds, programmeNameById);
+  const programmesLabel = joinProgrammes(
+    mod.programmeIds ?? [],
+    programmeNameById,
+  );
 
   return (
     <div>

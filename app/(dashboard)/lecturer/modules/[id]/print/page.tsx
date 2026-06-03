@@ -18,12 +18,13 @@ export default async function LecturerGradeSheetPrintPage({
   // Authorises the lecturer + 404s if the module isn't theirs
   const { me, course: mod } = await requireLecturerCourse(id);
 
+  const modProgrammeIds = mod.programmeIds ?? [];
   await connectDB();
   const [rows, rule, programmes] = await Promise.all([
     loadGradeReportRows(id),
     getEffectiveGradingRule(id),
-    mod.programmeIds.length
-      ? Programme.find({ _id: { $in: mod.programmeIds } })
+    modProgrammeIds.length
+      ? Programme.find({ _id: { $in: modProgrammeIds } })
           .select("name code")
           .lean()
       : Promise.resolve([] as { _id: unknown; name: string; code: string }[]),
@@ -32,7 +33,7 @@ export default async function LecturerGradeSheetPrintPage({
     programmes.map((p) => [String(p._id), p.name as string]),
   );
   const programmesLabel =
-    mod.programmeIds
+    modProgrammeIds
       .map((pid) => programmeNameById.get(String(pid)))
       .filter((n): n is string => !!n)
       .join(", ") || "—";

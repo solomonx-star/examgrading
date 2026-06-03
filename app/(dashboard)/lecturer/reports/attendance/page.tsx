@@ -30,7 +30,7 @@ export default async function LecturerAttendanceReportPickerPage({
     .lean();
 
   const programmeIds = Array.from(
-    new Set(courses.flatMap((c) => c.programmeIds.map(String))),
+    new Set(courses.flatMap((c) => (c.programmeIds ?? []).map(String))),
   );
   const programmes = await Programme.find({ _id: { $in: programmeIds } })
     .select("name")
@@ -112,7 +112,7 @@ export default async function LecturerAttendanceReportPickerPage({
                     </td>
                     <td className="px-4 py-3 text-foreground">{c.name}</td>
                     <td className="px-4 py-3 text-body">
-                      {c.programmeIds
+                      {(c.programmeIds ?? [])
                         .map((pid) => programmeById.get(String(pid)))
                         .filter((n): n is string => !!n)
                         .join(", ") || "—"}

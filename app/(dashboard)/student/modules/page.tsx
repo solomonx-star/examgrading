@@ -23,7 +23,7 @@ export default async function StudentModulesPage() {
     Programme.find({
       _id: {
         $in: Array.from(
-          new Set(modules.flatMap((m) => m.programmeIds)),
+          new Set(modules.flatMap((m) => m.programmeIds ?? [])),
         ),
       },
     })
@@ -84,11 +84,10 @@ export default async function StudentModulesPage() {
                 const grade = gradeByModule.get(m.id);
                 // Prefer the student's own programme if this module is shared
                 // across multiple programmes — otherwise just show the first.
+                const pids = m.programmeIds ?? [];
                 const ownPid = me.programmeId ?? null;
                 const matchedPid =
-                  ownPid && m.programmeIds.includes(ownPid)
-                    ? ownPid
-                    : m.programmeIds[0];
+                  ownPid && pids.includes(ownPid) ? ownPid : pids[0];
                 const programme = matchedPid
                   ? programmeById.get(matchedPid)
                   : undefined;

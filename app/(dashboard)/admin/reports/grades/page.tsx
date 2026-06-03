@@ -140,7 +140,7 @@ export default async function GradeReportPickerPage({
               courses.map((c) => {
                 const id = String(c._id);
                 const programmesLabel =
-                  c.programmeIds
+                  (c.programmeIds ?? [])
                     .map((pid) => programmeById.get(String(pid))?.name)
                     .filter((n): n is string => !!n)
                     .join(", ") || "—";

@@ -149,7 +149,7 @@ export default async function CoursesPage({
                       </Link>
                     </td>
                     <td className="hidden px-4 py-3 text-body lg:table-cell">
-                      {m.programmeIds
+                      {(m.programmeIds ?? [])
                         .map((pid) => programmeName.get(String(pid)))
                         .filter((n): n is string => !!n)
                         .join(", ") || "—"}

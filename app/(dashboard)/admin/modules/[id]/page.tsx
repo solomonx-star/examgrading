@@ -43,8 +43,9 @@ export default async function EditCoursePage({
   const programmeName = new Map(
     programmes.map((p) => [String(p._id), p.name as string]),
   );
+  const modProgrammeIds = mod.programmeIds ?? [];
   const programmesLabel =
-    mod.programmeIds
+    modProgrammeIds
       .map((pid) => programmeName.get(String(pid)) ?? null)
       .filter((n): n is string => !!n)
       .join(", ") || "No programmes";
@@ -61,7 +62,7 @@ export default async function EditCoursePage({
         defaults={{
           name: mod.name,
           code: mod.code,
-          programmeIds: mod.programmeIds.map((pid) => String(pid)),
+          programmeIds: modProgrammeIds.map((pid) => String(pid)),
           yearLevel: mod.yearLevel,
           academicYear: mod.academicYear,
           semester: mod.semester,

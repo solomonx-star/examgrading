@@ -29,7 +29,7 @@ export async function getEnrolledModules(
     id: String(m._id),
     code: m.code,
     name: m.name,
-    programmeIds: m.programmeIds.map((pid) => String(pid)),
+    programmeIds: (m.programmeIds ?? []).map((pid) => String(pid)),
     yearLevel: m.yearLevel,
     academicYear: m.academicYear,
     semester: m.semester,

@@ -26,14 +26,15 @@ async function buildHeader(
     _id: mongoose.Types.ObjectId;
     code: string;
     name: string;
-    programmeIds: mongoose.Types.ObjectId[];
+    programmeIds?: mongoose.Types.ObjectId[] | null;
     yearLevel: number;
     academicYear: string;
     semester: "First" | "Second" | "Summer";
   },
 ): Promise<CourseHeader> {
-  const programmes = mod.programmeIds.length
-    ? await Programme.find({ _id: { $in: mod.programmeIds } })
+  const ids = mod.programmeIds ?? [];
+  const programmes = ids.length
+    ? await Programme.find({ _id: { $in: ids } })
         .select("name code")
         .lean()
     : [];
@@ -44,7 +45,7 @@ async function buildHeader(
       { name: p.name as string, code: p.code as string },
     ]),
   );
-  const orderedIds = mod.programmeIds.map((pid) => String(pid));
+  const orderedIds = ids.map((pid) => String(pid));
   const names = orderedIds
     .map((id) => byId.get(id)?.name)
     .filter((n): n is string => !!n);
