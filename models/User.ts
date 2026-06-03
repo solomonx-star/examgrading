@@ -88,11 +88,20 @@ UserSchema.pre("save", async function () {
 UserSchema.pre("save", async function () {
   if (this.role !== "student" || this.studentId) return;
   const year = new Date().getFullYear();
+  const prefix = `IAMCO-${year}-`;
   const UserCol = mongoose.models.User as UserModel | undefined;
-  const count = UserCol
-    ? await UserCol.countDocuments({ role: "student" })
-    : 0;
-  this.studentId = `IAMCO-${year}-${String(count + 1).padStart(4, "0")}`;
+  let next = 1;
+  if (UserCol) {
+    const last = await UserCol.findOne({
+      studentId: { $regex: `^${prefix}` },
+    })
+      .sort({ studentId: -1 })
+      .select("studentId")
+      .lean();
+    const m = last?.studentId?.match(/(\d+)$/);
+    if (m) next = parseInt(m[1], 10) + 1;
+  }
+  this.studentId = `${prefix}${String(next).padStart(4, "0")}`;
 });
 
 UserSchema.methods.comparePassword = function (candidate: string) {
