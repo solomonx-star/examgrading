@@ -32,3 +32,18 @@ export type {
   AccessPaymentChannel,
   AccessPaymentStatus,
 } from "./AccessPayment";
+
+export { Test } from "./Test";
+export type {
+  ITest,
+  ITestQuestion,
+  ITestOption,
+  TestQuestionType,
+} from "./Test";
+
+export { TestSubmission } from "./TestSubmission";
+export type {
+  ITestSubmission,
+  ITestSubmissionAnswer,
+  TestSubmissionStatus,
+} from "./TestSubmission";

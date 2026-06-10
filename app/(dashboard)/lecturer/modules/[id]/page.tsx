@@ -107,6 +107,21 @@ export default async function LecturerCoursePage({
           </p>
         </Link>
         <Link
+          href={`/lecturer/modules/${id}/tests`}
+          className="group rounded-2xl border border-stroke bg-white p-5 shadow-sm transition hover:border-primary"
+        >
+          <p className="text-xs font-medium uppercase tracking-wide text-body">
+            Action
+          </p>
+          <p className="mt-1 text-lg font-semibold text-foreground group-hover:text-primary">
+            Tests
+          </p>
+          <p className="mt-1 text-sm text-body">
+            Build objective tests for your students. Submitted scores
+            auto-populate the test column on the grade sheet.
+          </p>
+        </Link>
+        <Link
           href={`/lecturer/modules/${id}/grades`}
           className="group rounded-2xl border border-stroke bg-white p-5 shadow-sm transition hover:border-primary"
         >

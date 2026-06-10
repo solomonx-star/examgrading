@@ -6,6 +6,8 @@ import { Course } from "@/models/Course";
 import { Programme } from "@/models/Programme";
 import { Attendance } from "@/models/Attendance";
 import { Grade } from "@/models/Grade";
+import { Test } from "@/models/Test";
+import { TestSubmission } from "@/models/TestSubmission";
 import { User } from "@/models/User";
 import { requireActiveStudentAccess } from "@/lib/student-scope";
 import { getEffectiveGradingRule } from "@/lib/grading-server";
@@ -62,7 +64,7 @@ export default async function StudentModulePage({
       ? ownProgrammeOid
       : (modProgrammeIds[0] ?? null);
 
-  const [lecturer, programme, attendance, grade, rule] = await Promise.all([
+  const [lecturer, programme, attendance, grade, rule, openTests, mySubmissions] = await Promise.all([
     mod.lecturerId
       ? User.findById(mod.lecturerId).select("name email").lean()
       : Promise.resolve(null),
@@ -82,6 +84,15 @@ export default async function StudentModulePage({
       isPublished: true,
     }).lean(),
     getEffectiveGradingRule(id),
+    Test.countDocuments({
+      courseId: mod._id,
+      isPublished: true,
+    }),
+    TestSubmission.countDocuments({
+      courseId: mod._id,
+      studentId: meOid,
+      status: "submitted",
+    }),
   ]);
 
   const total = attendance.length;
@@ -151,6 +162,27 @@ export default async function StudentModulePage({
           )}
         </div>
       </div>
+
+      <section className="mb-6 rounded-2xl border border-stroke bg-white p-5 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-semibold text-foreground">Tests</h2>
+            <p className="text-xs text-body">
+              {openTests === 0
+                ? "No tests have been published for this module yet."
+                : `${openTests} published · ${mySubmissions} submitted by you`}
+            </p>
+          </div>
+          {openTests > 0 ? (
+            <Link
+              href={`/student/modules/${id}/tests`}
+              className="inline-flex items-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-dark"
+            >
+              View tests
+            </Link>
+          ) : null}
+        </div>
+      </section>
 
       {grade ? (
         <section className="mb-6 rounded-2xl border border-stroke bg-white p-5 shadow-sm">
