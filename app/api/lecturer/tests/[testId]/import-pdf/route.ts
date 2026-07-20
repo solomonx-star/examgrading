@@ -6,6 +6,7 @@ import { Test } from "@/models/Test";
 import { TestSubmission } from "@/models/TestSubmission";
 import { requireLecturerCourse } from "@/lib/lecturer-course";
 import { extractPdfText, parseQuestionsFromText } from "@/lib/pdf-extract";
+import { gradeQuestionsWithAI } from "@/lib/ai-grader";
 import { audit } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
@@ -92,8 +93,8 @@ export async function POST(
     );
   }
 
-  const parsed = parseQuestionsFromText(text);
-  if (parsed.length === 0) {
+  const parsedRaw = parseQuestionsFromText(text);
+  if (parsedRaw.length === 0) {
     return NextResponse.json(
       {
         error:
@@ -104,6 +105,8 @@ export async function POST(
       { status: 422 },
     );
   }
+
+  const { questions: parsed, aiGraded } = await gradeQuestionsWithAI(parsedRaw);
 
   let storedUrl: string | null = null;
   if (process.env.BLOB_READ_WRITE_TOKEN) {
@@ -139,6 +142,7 @@ export async function POST(
   return NextResponse.json({
     ok: true,
     questions: parsed,
+    aiGraded,
     storedUrl,
     rawTextPreview: text.slice(0, 600),
   });

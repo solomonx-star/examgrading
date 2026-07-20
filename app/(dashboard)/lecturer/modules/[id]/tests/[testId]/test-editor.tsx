@@ -96,6 +96,7 @@ export function TestEditor({
   const [pubPending, startPub] = useTransition();
   const [delPending, startDel] = useTransition();
   const [importPending, setImportPending] = useState(false);
+  const [aiGraded, setAiGraded] = useState(false);
   const [importDiag, setImportDiag] = useState<{
     error: string;
     preview: string;
@@ -119,6 +120,7 @@ export function TestEditor({
         error?: string;
         rawTextPreview?: string;
         extractedChars?: number;
+        aiGraded?: boolean;
         questions?: Array<{
           type: QuestionType;
           prompt: string;
@@ -148,16 +150,23 @@ export function TestEditor({
         })),
       }));
       setQuestions((prev) => [...prev, ...incoming]);
-      const autoMarked = incoming.filter((q) =>
-        q.options.some((o) => o.isCorrect),
-      ).length;
-      const msg =
-        autoMarked === incoming.length
-          ? `Imported ${incoming.length} question${incoming.length === 1 ? "" : "s"} — correct answers detected automatically. Review and save.`
-          : autoMarked > 0
-            ? `Imported ${incoming.length} question${incoming.length === 1 ? "" : "s"} — ${autoMarked} had answers auto-detected. Tick remaining correct answers, then save.`
-            : `Imported ${incoming.length} question${incoming.length === 1 ? "" : "s"}. Tick the correct answers, then save.`;
-      toast.success(msg);
+      if (data.aiGraded) {
+        setAiGraded(true);
+        toast.success(
+          `Imported ${incoming.length} question${incoming.length === 1 ? "" : "s"} — Claude AI has suggested correct answers. Review before saving.`,
+        );
+      } else {
+        const autoMarked = incoming.filter((q) =>
+          q.options.some((o) => o.isCorrect),
+        ).length;
+        const msg =
+          autoMarked === incoming.length
+            ? `Imported ${incoming.length} question${incoming.length === 1 ? "" : "s"} — correct answers detected automatically. Review and save.`
+            : autoMarked > 0
+              ? `Imported ${incoming.length} question${incoming.length === 1 ? "" : "s"} — ${autoMarked} had answers auto-detected. Tick remaining correct answers, then save.`
+              : `Imported ${incoming.length} question${incoming.length === 1 ? "" : "s"}. Tick the correct answers, then save.`;
+        toast.success(msg);
+      }
     } catch {
       toast.error("Could not import PDF.");
     } finally {
@@ -414,6 +423,22 @@ export function TestEditor({
             <span className="font-mono">Answer: B</span> lines, or a trailing
             answer-key block. Review detected answers before saving.
           </p>
+
+          {aiGraded ? (
+            <div className="flex items-center justify-between gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-xs text-primary">
+              <span>
+                Claude AI has pre-selected the correct answers — review each
+                question before saving.
+              </span>
+              <button
+                type="button"
+                onClick={() => setAiGraded(false)}
+                className="shrink-0 font-medium hover:underline"
+              >
+                Dismiss
+              </button>
+            </div>
+          ) : null}
 
           {importDiag ? (
             <div className="rounded-2xl border border-meta-1/30 bg-meta-1/5 p-4 text-xs">
