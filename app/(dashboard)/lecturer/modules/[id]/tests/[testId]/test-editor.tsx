@@ -122,7 +122,7 @@ export function TestEditor({
         questions?: Array<{
           type: QuestionType;
           prompt: string;
-          options: { letter: string; text: string }[];
+          options: { letter: string; text: string; isCorrect: boolean }[];
         }>;
       };
       if (!res.ok || !data.ok || !data.questions) {
@@ -144,13 +144,20 @@ export function TestEditor({
         options: q.options.map((o) => ({
           id: uid(),
           text: o.text,
-          isCorrect: false,
+          isCorrect: o.isCorrect,
         })),
       }));
       setQuestions((prev) => [...prev, ...incoming]);
-      toast.success(
-        `Imported ${incoming.length} question${incoming.length === 1 ? "" : "s"}. Tick the correct answers, then save.`,
-      );
+      const autoMarked = incoming.filter((q) =>
+        q.options.some((o) => o.isCorrect),
+      ).length;
+      const msg =
+        autoMarked === incoming.length
+          ? `Imported ${incoming.length} question${incoming.length === 1 ? "" : "s"} — correct answers detected automatically. Review and save.`
+          : autoMarked > 0
+            ? `Imported ${incoming.length} question${incoming.length === 1 ? "" : "s"} — ${autoMarked} had answers auto-detected. Tick remaining correct answers, then save.`
+            : `Imported ${incoming.length} question${incoming.length === 1 ? "" : "s"}. Tick the correct answers, then save.`;
+      toast.success(msg);
     } catch {
       toast.error("Could not import PDF.");
     } finally {
@@ -400,8 +407,12 @@ export function TestEditor({
             <span className="font-mono"> 1. </span>or
             <span className="font-mono"> Q1. </span>) and lettered options
             (e.g. <span className="font-mono">A.</span>,{" "}
-            <span className="font-mono">a)</span>). After import, tick the
-            correct answer on each question.
+            <span className="font-mono">a)</span>). Correct answers are
+            auto-detected from markers like{" "}
+            <span className="font-mono">*A.</span>, trailing{" "}
+            <span className="font-mono">✓</span>, inline{" "}
+            <span className="font-mono">Answer: B</span> lines, or a trailing
+            answer-key block. Review detected answers before saving.
           </p>
 
           {importDiag ? (

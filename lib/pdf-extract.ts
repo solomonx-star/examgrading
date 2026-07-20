@@ -4,6 +4,7 @@ import type { TestQuestionType } from "@/models/Test";
 export type ParsedOption = {
   letter: string;
   text: string;
+  isCorrect: boolean;
 };
 
 export type ParsedQuestion = {
@@ -24,8 +25,12 @@ export async function extractPdfText(buffer: ArrayBuffer): Promise<string> {
 const QUESTION_LINE_RE =
   /^(?:question\s+|q[.:]?\s*)?(\d{1,3})\s*[.)\]:\-]\s*(.+)$/i;
 
+// Leading correct marker (* or ✓) before the option letter
 const OPTION_LINE_RE =
-  /^[\(\[]?\s*([A-Ha-h])\s*[\)\].:\-]\s*(.+)$/;
+  /^([*✓✔√]?\s*)[\(\[]?\s*([A-Ha-h])\s*[\)\].:\-]\s*(.+)$/;
+
+// Trailing correct marker at end of option text
+const TRAILING_CORRECT_RE = /\s*[*✓✔√]$/;
 
 function normaliseWhitespace(s: string): string {
   return s.replace(/\s+/g, " ").trim();
@@ -62,6 +67,12 @@ function insertMarkerBreaks(input: string): string {
   return text;
 }
 
+// Detects "Answer: B" or "Correct answer: C" lines following a question
+const INLINE_ANSWER_RE = /^(?:answer|correct\s+answer|ans|key)\s*[:.\-]\s*([A-Ha-h])\b/i;
+
+// Detects answer-key sections: "1. A" / "1) B" / "1- C" (standalone answer list)
+const ANSWER_KEY_LINE_RE = /^(\d{1,3})\s*[.)\-]\s*([A-Ha-h])\s*$/i;
+
 function parseDrafts(text: string): {
   prompt: string;
   options: ParsedOption[];
@@ -76,10 +87,12 @@ function parseDrafts(text: string): {
   let current: Draft | null = null;
   let lastOption: ParsedOption | null = null;
 
+  // First pass: collect questions and options, detecting inline correct markers
   for (const raw of lines) {
     const line = raw.replace(/ /g, " ").trim();
     const qm = line.match(QUESTION_LINE_RE);
     const om = line.match(OPTION_LINE_RE);
+    const am = line.match(INLINE_ANSWER_RE);
 
     if (qm) {
       current = { prompt: qm[2].trim(), options: [] };
@@ -88,10 +101,26 @@ function parseDrafts(text: string): {
       continue;
     }
 
+    if (am && current) {
+      // "Answer: B" line — mark the matching option as correct
+      const correctLetter = am[1].toUpperCase();
+      for (const opt of current.options) {
+        opt.isCorrect = opt.letter === correctLetter;
+      }
+      continue;
+    }
+
     if (om && current) {
+      const leadingMarker = om[1].trim(); // captured *, ✓, etc.
+      const rawText = om[3].trim();
+      const hasTrailing = TRAILING_CORRECT_RE.test(rawText);
+      const isCorrect = leadingMarker.length > 0 || hasTrailing;
+      const cleanText = rawText.replace(TRAILING_CORRECT_RE, "").trim();
+
       const opt: ParsedOption = {
-        letter: om[1].toUpperCase(),
-        text: om[2].trim(),
+        letter: om[2].toUpperCase(),
+        text: cleanText,
+        isCorrect,
       };
       current.options.push(opt);
       lastOption = opt;
@@ -105,6 +134,28 @@ function parseDrafts(text: string): {
       current.prompt = normaliseWhitespace(`${current.prompt} ${line}`);
     }
   }
+
+  // Second pass: look for a trailing answer-key block and apply it
+  // e.g. "1. A\n2. C\n3. B" at the end of the document
+  const answerMap = new Map<number, string>();
+  for (const line of lines) {
+    const km = line.match(ANSWER_KEY_LINE_RE);
+    if (km) answerMap.set(Number(km[1]), km[2].toUpperCase());
+  }
+  if (answerMap.size > 0) {
+    drafts.forEach((draft, idx) => {
+      const letter = answerMap.get(idx + 1);
+      if (!letter) return;
+      // Only apply if no answer was already detected inline
+      const alreadyMarked = draft.options.some((o) => o.isCorrect);
+      if (!alreadyMarked) {
+        for (const opt of draft.options) {
+          opt.isCorrect = opt.letter === letter;
+        }
+      }
+    });
+  }
+
   return drafts;
 }
 
@@ -143,6 +194,7 @@ export function parseQuestionsFromText(text: string): ParsedQuestion[] {
       options: d.options.map((o) => ({
         letter: o.letter,
         text: normaliseWhitespace(o.text),
+        isCorrect: o.isCorrect,
       })),
     };
   });
