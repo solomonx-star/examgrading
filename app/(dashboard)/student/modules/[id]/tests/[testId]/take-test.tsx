@@ -50,16 +50,17 @@ export function TakeTest({
   const [deadline, setDeadline] = useState(() => new Date(deadlineIso).getTime());
   const [now, setNow] = useState(() => Date.now());
   const submittedRef = useRef(false);
+  const [result, setResult] = useState<{ percentage: number; score: number; maxScore: number } | null>(null);
 
   // When the server has already started this submission, the deadline arrives
   // pre-computed. When it hasn't, we recompute it after the start action runs.
   const endsAt = useMemo(() => new Date(endsAtIso).getTime(), [endsAtIso]);
 
   useEffect(() => {
-    if (!hasStarted) return;
+    if (!hasStarted || result) return;
     const t = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(t);
-  }, [hasStarted]);
+  }, [hasStarted, result]);
 
   function toggleAnswer(qid: string, oid: string, type: QuestionType) {
     setAnswers((prev) => {
@@ -95,7 +96,11 @@ export function TakeTest({
               ? `Time's up — submitted (${scoreLabel}).`
               : `Submitted (${scoreLabel}).`,
           );
-          router.refresh();
+          setResult({
+            percentage: res.percentage ?? 0,
+            score: res.score ?? 0,
+            maxScore: res.maxScore ?? 0,
+          });
         } else {
           submittedRef.current = false;
           toast.error(res.error ?? "Could not submit.");
@@ -112,6 +117,28 @@ export function TakeTest({
       submit(true);
     }
   }, [remaining, hasStarted, submit]);
+
+  if (result) {
+    return (
+      <div className="rounded-2xl border border-meta-3/30 bg-meta-3/10 p-6 text-center">
+        <p className="text-xs font-medium uppercase tracking-wide text-meta-3">
+          Submitted
+        </p>
+        <p className="mt-2 text-3xl font-bold text-foreground">
+          {formatPercent(result.percentage)}
+        </p>
+        <p className="mt-1 text-sm text-body">
+          Raw: {result.score} / {result.maxScore} point
+          {result.maxScore === 1 ? "" : "s"}
+        </p>
+        <p className="mt-3 text-xs text-body">
+          Your score has been recorded. It will appear on your grade once your
+          lecturer submits and the exams office publishes the module&apos;s
+          final grades.
+        </p>
+      </div>
+    );
+  }
 
   if (!hasStarted) {
     const overall = Math.max(0, endsAt - now);

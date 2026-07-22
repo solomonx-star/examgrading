@@ -110,7 +110,7 @@ export async function submitTestAction(
   courseId: string,
   testId: string,
   input: SubmitInput,
-): Promise<ActionResult & { percentage?: number }> {
+): Promise<ActionResult & { percentage?: number; score?: number; maxScore?: number }> {
   const me = await requireActiveStudentAccess();
   const meOid = new mongoose.Types.ObjectId(me.userId);
 
@@ -223,5 +223,5 @@ export async function submitTestAction(
   revalidatePath(`/student/modules/${courseId}/tests/${testId}`);
   revalidatePath(`/lecturer/modules/${courseId}/tests/${testId}/results`);
   revalidatePath(`/lecturer/modules/${courseId}/grades`);
-  return { ok: true, percentage: score.percentage };
+  return { ok: true, percentage: score.percentage, score: score.score, maxScore: score.maxScore };
 }
