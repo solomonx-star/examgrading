@@ -51,6 +51,7 @@ export function TakeTest({
   const [now, setNow] = useState(() => Date.now());
   const submittedRef = useRef(false);
   const [result, setResult] = useState<{ percentage: number; score: number; maxScore: number } | null>(null);
+  const [confirming, setConfirming] = useState(false);
 
   // When the server has already started this submission, the deadline arrives
   // pre-computed. When it hasn't, we recompute it after the start action runs.
@@ -107,7 +108,7 @@ export function TakeTest({
         }
       });
     },
-    [answers, courseId, router, testId],
+    [answers, courseId, testId],
   );
 
   const remaining = deadline - now;
@@ -118,22 +119,20 @@ export function TakeTest({
     }
   }, [remaining, hasStarted, submit]);
 
-  // Forfeit on tab switch, window minimize, or app switch
+  // Forfeit on tab switch or window minimize
   useEffect(() => {
     if (!hasStarted || result) return;
 
     function handleVisibilityChange() {
-      if (document.hidden) submit(true);
-    }
-    function handleBlur() {
-      submit(true);
+      if (document.hidden) {
+        setConfirming(false);
+        submit(true);
+      }
     }
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
-    window.addEventListener("blur", handleBlur);
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-      window.removeEventListener("blur", handleBlur);
     };
   }, [hasStarted, result, submit]);
 
@@ -221,22 +220,35 @@ export function TakeTest({
             {formatRemaining(remaining)}
           </p>
         </div>
-        <button
-          type="button"
-          disabled={submitPending}
-          onClick={() => {
-            if (
-              !confirm(
-                "Submit your answers? You will not be able to change them after.",
-              )
-            )
-              return;
-            submit(false);
-          }}
-          className="inline-flex items-center rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-dark disabled:opacity-60"
-        >
-          {submitPending ? "Submitting…" : "Submit test"}
-        </button>
+        {confirming ? (
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-medium text-foreground">Submit now?</p>
+            <button
+              type="button"
+              disabled={submitPending}
+              onClick={() => { setConfirming(false); submit(false); }}
+              className="inline-flex items-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-dark disabled:opacity-60"
+            >
+              {submitPending ? "Submitting…" : "Yes, submit"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirming(false)}
+              className="inline-flex items-center rounded-lg border border-stroke px-4 py-2 text-sm font-medium text-body hover:text-foreground"
+            >
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            disabled={submitPending}
+            onClick={() => setConfirming(true)}
+            className="inline-flex items-center rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-dark disabled:opacity-60"
+          >
+            Submit test
+          </button>
+        )}
       </div>
 
       {questions.map((q, idx) => {
@@ -286,23 +298,36 @@ export function TakeTest({
         );
       })}
 
-      <div className="flex items-center justify-end">
-        <button
-          type="button"
-          disabled={submitPending}
-          onClick={() => {
-            if (
-              !confirm(
-                "Submit your answers? You will not be able to change them after.",
-              )
-            )
-              return;
-            submit(false);
-          }}
-          className="inline-flex items-center rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-primary-dark disabled:opacity-60"
-        >
-          {submitPending ? "Submitting…" : "Submit test"}
-        </button>
+      <div className="flex items-center justify-end gap-2">
+        {confirming ? (
+          <>
+            <p className="text-sm font-medium text-foreground">Submit now?</p>
+            <button
+              type="button"
+              disabled={submitPending}
+              onClick={() => { setConfirming(false); submit(false); }}
+              className="inline-flex items-center rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-dark disabled:opacity-60"
+            >
+              {submitPending ? "Submitting…" : "Yes, submit"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirming(false)}
+              className="inline-flex items-center rounded-lg border border-stroke px-5 py-2.5 text-sm font-medium text-body hover:text-foreground"
+            >
+              Cancel
+            </button>
+          </>
+        ) : (
+          <button
+            type="button"
+            disabled={submitPending}
+            onClick={() => setConfirming(true)}
+            className="inline-flex items-center rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-primary-dark disabled:opacity-60"
+          >
+            Submit test
+          </button>
+        )}
       </div>
     </div>
   );
