@@ -118,6 +118,25 @@ export function TakeTest({
     }
   }, [remaining, hasStarted, submit]);
 
+  // Forfeit on tab switch, window minimize, or app switch
+  useEffect(() => {
+    if (!hasStarted || result) return;
+
+    function handleVisibilityChange() {
+      if (document.hidden) submit(true);
+    }
+    function handleBlur() {
+      submit(true);
+    }
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("blur", handleBlur);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("blur", handleBlur);
+    };
+  }, [hasStarted, result, submit]);
+
   if (result) {
     return (
       <div className="rounded-2xl border border-meta-3/30 bg-meta-3/10 p-6 text-center">
@@ -156,6 +175,9 @@ export function TakeTest({
           You can only take this test once. The test window closes in roughly{" "}
           {formatRemaining(overall)}.
         </p>
+        <p className="mt-3 rounded-lg bg-meta-1/10 px-4 py-2 text-xs font-medium text-meta-1">
+          Switching tabs, minimizing, or leaving this window will automatically forfeit your exam.
+        </p>
         <button
           type="button"
           disabled={startPending}
@@ -183,6 +205,9 @@ export function TakeTest({
 
   return (
     <div className="space-y-5">
+      <div className="rounded-lg bg-meta-1/10 px-4 py-2 text-center text-xs font-medium text-meta-1">
+        Do not switch tabs, minimize, or leave this window — your exam will be forfeited immediately.
+      </div>
       <div className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-stroke bg-white px-5 py-3 shadow-sm">
         <div>
           <p className="text-xs font-medium uppercase tracking-wide text-body">
