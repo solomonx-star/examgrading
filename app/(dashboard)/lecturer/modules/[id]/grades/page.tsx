@@ -4,6 +4,7 @@ import { User } from "@/models/User";
 import { Grade } from "@/models/Grade";
 import { requireLecturerCourse } from "@/lib/lecturer-course";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { AutoRefresh } from "@/components/ui/AutoRefresh";
 import { getEffectiveGradingRule } from "@/lib/grading-server";
 import { computeAttendanceStatsForCourse } from "@/lib/grade-engine";
 import { GradeSheet } from "./grade-sheet";
@@ -70,6 +71,7 @@ export default async function LecturerGradesPage({
 
   return (
     <div>
+      <AutoRefresh intervalMs={30_000} />
       <PageHeader
         title="Grades"
         description={`${mod.code} — ${mod.name} · Year ${mod.yearLevel} · ${rule.caWeight}% test + ${rule.examWeight}% exam`}
