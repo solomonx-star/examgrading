@@ -3,7 +3,7 @@ import type { UserRole } from "@/models/User";
 export type NavItem = {
   href: string;
   label: string;
-  icon: "home" | "users" | "book" | "calendar" | "scale" | "clipboard" | "chart";
+  icon: "home" | "users" | "book" | "calendar" | "scale" | "clipboard" | "chart" | "pencil";
 };
 
 export const ROLE_NAV: Record<UserRole, NavItem[]> = {
@@ -33,6 +33,7 @@ export const ROLE_NAV: Record<UserRole, NavItem[]> = {
   student: [
     { href: "/student", label: "Overview", icon: "home" },
     { href: "/student/modules", label: "My modules", icon: "book" },
+    { href: "/student/tests", label: "Tests", icon: "pencil" },
     { href: "/student/attendance", label: "Attendance", icon: "clipboard" },
     { href: "/student/grades", label: "Grades", icon: "scale" },
     { href: "/student/transcript", label: "Transcript", icon: "chart" },

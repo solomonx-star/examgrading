@@ -55,6 +55,13 @@ const PATHS: Record<IconName, React.ReactNode> = {
       d="M4 19h16M6 17V10m4 7V6m4 11v-8m4 8V13"
     />
   ),
+  pencil: (
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M15.232 5.232a3 3 0 0 1 4.243 4.243L7.5 21.5H3v-4.5L15.232 5.232Z"
+    />
+  ),
 };
 
 export function Icon({
