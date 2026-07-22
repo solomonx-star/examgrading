@@ -8,6 +8,7 @@ import {
   getPublishedGradesForStudent,
 } from "@/lib/student-data";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { AutoRefresh } from "@/components/ui/AutoRefresh";
 import { PrintButton } from "@/components/ui/PrintButton";
 
 export const dynamic = "force-dynamic";
@@ -82,6 +83,7 @@ export default async function StudentTranscriptPage() {
 
   return (
     <div className="print:bg-white">
+      <AutoRefresh intervalMs={60_000} />
       <div className="print:hidden">
         <PageHeader
           title="Academic transcript"

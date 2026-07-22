@@ -8,6 +8,7 @@ import {
   getPublishedGradesForStudent,
 } from "@/lib/student-data";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { AutoRefresh } from "@/components/ui/AutoRefresh";
 import { StatCard } from "@/components/ui/StatCard";
 import { StudentGradeCharts } from "@/components/charts/StudentGradeCharts";
 
@@ -81,6 +82,7 @@ export default async function StudentGradesPage() {
 
   return (
     <div>
+      <AutoRefresh intervalMs={60_000} />
       <PageHeader
         title="Grades & transcript"
         description="Only grades that your lecturer has published appear here."

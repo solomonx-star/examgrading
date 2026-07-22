@@ -7,6 +7,7 @@ import { Test } from "@/models/Test";
 import { TestSubmission } from "@/models/TestSubmission";
 import { requireActiveStudentAccess } from "@/lib/student-scope";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { AutoRefresh } from "@/components/ui/AutoRefresh";
 import { TestStartCountdown } from "@/components/dashboard/TestStartCountdown";
 import { formatPercent } from "@/lib/format";
 
@@ -53,6 +54,7 @@ export default async function StudentTestsListPage({
 
   return (
     <div>
+      <AutoRefresh intervalMs={30_000} />
       <PageHeader
         title="Tests"
         description={`${mod.code} — ${mod.name}`}

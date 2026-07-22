@@ -4,6 +4,7 @@ import { Programme } from "@/models/Programme";
 import { AcademicPeriod } from "@/models/AcademicPeriod";
 import { requireAdminScope } from "@/lib/admin-scope";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { AutoRefresh } from "@/components/ui/AutoRefresh";
 import { loadCohortRows } from "@/lib/cohort-data";
 import { CohortPublishButton } from "./cohort-publish-button";
 
@@ -60,6 +61,7 @@ export default async function AdminGradesPage({
 
   return (
     <div>
+      <AutoRefresh intervalMs={30_000} />
       <PageHeader
         title="Grade reviews"
         description="Pick a cohort, review submitted grades, then publish."

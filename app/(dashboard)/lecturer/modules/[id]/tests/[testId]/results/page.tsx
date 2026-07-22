@@ -7,6 +7,7 @@ import { TestSubmission } from "@/models/TestSubmission";
 import { User } from "@/models/User";
 import { requireLecturerCourse } from "@/lib/lecturer-course";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { AutoRefresh } from "@/components/ui/AutoRefresh";
 import { formatPercent } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -60,6 +61,7 @@ export default async function LecturerTestResultsPage({
 
   return (
     <div>
+      <AutoRefresh intervalMs={10_000} />
       <PageHeader
         title={`Results · ${test.title}`}
         description={`${mod.code} — ${mod.name}`}
