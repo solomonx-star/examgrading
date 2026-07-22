@@ -7,6 +7,7 @@ import { AccessPayment } from "@/models/AccessPayment";
 import { User } from "@/models/User";
 import { AcademicPeriod } from "@/models/AcademicPeriod";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { AutoRefresh } from "@/components/ui/AutoRefresh";
 import { ManualPaymentForm } from "./manual-payment-form";
 
 export const dynamic = "force-dynamic";
@@ -48,6 +49,7 @@ export default async function SuperAdminAccessPaymentsPage() {
 
   return (
     <div>
+      <AutoRefresh intervalMs={60_000} />
       <PageHeader
         title="Access payments"
         description="Track student access fee payments across every department, or record a cash / bank-transfer payment."

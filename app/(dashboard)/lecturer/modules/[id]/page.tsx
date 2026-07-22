@@ -6,6 +6,7 @@ import { Attendance } from "@/models/Attendance";
 import { Grade } from "@/models/Grade";
 import { requireLecturerCourse } from "@/lib/lecturer-course";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { AutoRefresh } from "@/components/ui/AutoRefresh";
 import { StatCard } from "@/components/ui/StatCard";
 
 function joinProgrammes(
@@ -71,6 +72,7 @@ export default async function LecturerCoursePage({
 
   return (
     <div>
+      <AutoRefresh intervalMs={60_000} />
       <PageHeader
         title={`${mod.code} — ${mod.name}`}
         description={`${programmesLabel} · Year ${mod.yearLevel} · ${mod.academicYear} · ${mod.semester}`}

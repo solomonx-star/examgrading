@@ -10,6 +10,7 @@ import {
 } from "@/lib/student-data";
 import { StatCard } from "@/components/ui/StatCard";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { AutoRefresh } from "@/components/ui/AutoRefresh";
 
 export const dynamic = "force-dynamic";
 
@@ -71,6 +72,7 @@ export default async function StudentOverviewPage() {
 
   return (
     <div>
+      <AutoRefresh intervalMs={60_000} />
       <PageHeader
         title={`Welcome, ${me.name}`}
         description={`${me.studentId ?? ""}${programmeLabel}${yearLabel}`}

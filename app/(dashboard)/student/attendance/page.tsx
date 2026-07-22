@@ -5,6 +5,7 @@ import {
   getEnrolledModules,
 } from "@/lib/student-data";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { AutoRefresh } from "@/components/ui/AutoRefresh";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +19,7 @@ export default async function StudentAttendancePage() {
 
   return (
     <div>
+      <AutoRefresh intervalMs={60_000} />
       <PageHeader
         title="Attendance"
         description="Your attendance across every enrolled module."

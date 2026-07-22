@@ -12,6 +12,7 @@ import { User } from "@/models/User";
 import { requireActiveStudentAccess } from "@/lib/student-scope";
 import { getEffectiveGradingRule } from "@/lib/grading-server";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { AutoRefresh } from "@/components/ui/AutoRefresh";
 
 export const dynamic = "force-dynamic";
 
@@ -108,6 +109,7 @@ export default async function StudentModulePage({
 
   return (
     <div>
+      <AutoRefresh intervalMs={30_000} />
       <PageHeader
         title={`${mod.code} — ${mod.name}`}
         description={`${mod.academicYear} · ${mod.semester}${programmeLabel}${yearLabel}`}
