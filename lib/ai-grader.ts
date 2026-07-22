@@ -6,7 +6,8 @@ export async function gradeQuestionsWithAI(
 ): Promise<{ questions: ParsedQuestion[]; aiGraded: boolean }> {
   if (questions.length === 0) return { questions, aiGraded: false };
 
-  const apiKey = process.env.ANTHROPIC_API_KEY ?? "REDACTED";
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return { questions, aiGraded: false };
 
   try {
     const client = new Anthropic({ apiKey });
