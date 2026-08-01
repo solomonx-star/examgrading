@@ -103,6 +103,9 @@ export async function saveGradesAction(
     };
   }
 
+  const testMode = formData.get("testMode") === "precalc" ? "precalc" : "raw";
+  const testMaxScore = testMode === "precalc" ? rule.caWeight : 100;
+
   const attendanceFlags = await computeAttendanceMet(
     courseId,
     allowed.map((r) => r.studentId),
@@ -113,7 +116,7 @@ export async function saveGradesAction(
     allowed.map((r) => {
       const result = calculateGrade({
         testScore: r.testScore,
-        testMaxScore: 100,
+        testMaxScore,
         examScore: r.examScore,
         examMaxScore: 100,
         caWeight: rule.caWeight,
@@ -123,7 +126,7 @@ export async function saveGradesAction(
       const setFields: Record<string, unknown> = {
         lecturerId: lecturerObjectId,
         testScore: r.testScore,
-        testMaxScore: 100,
+        testMaxScore,
         examScore: r.examScore,
         examMaxScore: 100,
         calculatedScore: result.finalScore,
