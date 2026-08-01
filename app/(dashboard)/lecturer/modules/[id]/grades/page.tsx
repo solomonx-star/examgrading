@@ -64,6 +64,14 @@ export default async function LecturerGradesPage({
   );
   const anyPublished = existingGrades.some((g) => g.isPublished);
 
+  // If any saved grade used testMaxScore === caWeight, the lecturer is in
+  // pre-calculated mode. Default to raw otherwise.
+  const initialTestMode: "raw" | "precalc" = existingGrades.some(
+    (g) => g.testMaxScore === rule.caWeight,
+  )
+    ? "precalc"
+    : "raw";
+
   const attendanceByStudent = await computeAttendanceStatsForCourse(
     id,
     students.map((s) => String(s._id)),
@@ -117,6 +125,7 @@ export default async function LecturerGradesPage({
         }}
         anySubmitted={anySubmitted}
         anyPublished={anyPublished}
+        initialTestMode={initialTestMode}
         students={students.map((s) => {
           const sid = String(s._id);
           const g = gradeByStudent.get(sid);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useMemo, useState, useTransition } from "react";
+import { useActionState, useMemo, useRef, useState, useTransition } from "react";
 import { useFormStatus } from "react-dom";
 import { toast } from "sonner";
 import {
@@ -51,6 +51,7 @@ export function GradeSheet({
   students,
   anySubmitted,
   anyPublished,
+  initialTestMode,
 }: {
   courseId: string;
   rule: {
@@ -62,8 +63,9 @@ export function GradeSheet({
   students: Student[];
   anySubmitted: boolean;
   anyPublished: boolean;
+  initialTestMode: "raw" | "precalc";
 }) {
-  const [rows, setRows] = useState<Record<string, Row>>(() => {
+  const buildRows = () => {
     const out: Record<string, Row> = {};
     for (const s of students) {
       out[s.id] = {
@@ -72,10 +74,17 @@ export function GradeSheet({
       };
     }
     return out;
-  });
+  };
+
+  const [rows, setRows] = useState<Record<string, Row>>(buildRows);
+  const savedRows = useRef<Record<string, Row>>(buildRows());
+
+  const [testMode, setTestMode] = useState<"raw" | "precalc">(initialTestMode);
+  const testMaxScore = testMode === "precalc" ? rule.caWeight : 100;
 
   const [submitPending, startSubmit] = useTransition();
   const [recallPending, startRecall] = useTransition();
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   const bound = saveGradesAction.bind(null, courseId);
   const [state, formAction] = useActionState<FormState, FormData>(
@@ -83,6 +92,16 @@ export function GradeSheet({
     undefined,
   );
   useToastFromState(state, { successMessage: "Grades saved." });
+
+  // Keep savedRows in sync with the last successful save so Reset always
+  // reverts to the most recently persisted state, not just page-load.
+  const prevStateRef = useRef(state);
+  if (state !== prevStateRef.current) {
+    prevStateRef.current = state;
+    if (state?.ok) {
+      savedRows.current = { ...rows };
+    }
+  }
 
   // Lock the editor as soon as ANY row in the period is submitted.
   const locked = anySubmitted;
@@ -109,7 +128,7 @@ export function GradeSheet({
       if (!r) continue;
       const result = calculateGrade({
         testScore: r.testScore,
-        testMaxScore: 100,
+        testMaxScore,
         examScore: r.examScore,
         examMaxScore: 100,
         caWeight: rule.caWeight,
@@ -124,10 +143,50 @@ export function GradeSheet({
       };
     }
     return out;
-  }, [students, rows, rule]);
+  }, [students, rows, rule, testMaxScore]);
 
   return (
     <form action={formAction} className="space-y-6">
+      <input type="hidden" name="testMode" value={testMode} />
+
+      {/* Test score mode toggle */}
+      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-stroke bg-white px-4 py-3">
+        <span className="text-sm font-medium text-foreground">
+          Test score entry mode:
+        </span>
+        <div className="flex overflow-hidden rounded-lg border border-stroke text-sm">
+          <button
+            type="button"
+            disabled={locked}
+            onClick={() => setTestMode("raw")}
+            className={`px-4 py-1.5 font-medium transition-colors disabled:cursor-not-allowed ${
+              testMode === "raw"
+                ? "bg-primary text-white"
+                : "bg-white text-body hover:bg-whiter"
+            }`}
+          >
+            Raw /100 — system divides
+          </button>
+          <button
+            type="button"
+            disabled={locked}
+            onClick={() => setTestMode("precalc")}
+            className={`px-4 py-1.5 font-medium transition-colors disabled:cursor-not-allowed ${
+              testMode === "precalc"
+                ? "bg-primary text-white"
+                : "bg-white text-body hover:bg-whiter"
+            }`}
+          >
+            Pre-calculated /{rule.caWeight} — already divided
+          </button>
+        </div>
+        {testMode === "precalc" && (
+          <span className="text-xs text-body">
+            Enter the score as the lecturer calculated it (out of {rule.caWeight}). The system will not apply the weighting again.
+          </span>
+        )}
+      </div>
+
       <fieldset disabled={locked} className="space-y-6">
         <section className="overflow-x-auto rounded-2xl border border-stroke bg-white shadow-sm">
           <table className="w-full text-sm">
@@ -137,7 +196,7 @@ export function GradeSheet({
                 <th className="px-3 py-3">
                   Test
                   <span className="ml-1 text-[10px] font-normal text-body">
-                    /100
+                    /{testMaxScore}
                   </span>
                 </th>
                 <th className="hidden px-3 py-3 text-right text-[10px] font-normal sm:table-cell">
@@ -176,7 +235,7 @@ export function GradeSheet({
                   const r = rows[s.id];
                   const p = previews[s.id];
                   const testWeighted = r
-                    ? ((r.testScore / 100) * rule.caWeight).toFixed(2)
+                    ? ((r.testScore / testMaxScore) * rule.caWeight).toFixed(2)
                     : "—";
                   const examWeighted = r
                     ? ((r.examScore / 100) * rule.examWeight).toFixed(2)
@@ -201,7 +260,7 @@ export function GradeSheet({
                         <input
                           type="number"
                           min={0}
-                          max={100}
+                          max={testMaxScore}
                           name={`row[${s.id}][test]`}
                           value={r?.testScore ?? 0}
                           onChange={(e) =>
@@ -370,11 +429,50 @@ export function GradeSheet({
           {recallPending ? "Recalling…" : "Recall submission"}
         </button>
 
+        {!locked && (
+          <button
+            type="button"
+            disabled={students.length === 0}
+            onClick={() => setShowResetConfirm(true)}
+            className="inline-flex items-center rounded-lg border border-stroke px-4 py-2.5 text-sm font-semibold text-body hover:bg-whiter disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Reset to saved
+          </button>
+        )}
+
         <span className="ml-auto text-xs text-body">
           Save persists changes. Submitting sends them to the admin for review
           and publication.
         </span>
       </div>
+
+      {showResetConfirm && (
+        <div className="rounded-2xl border border-stroke bg-meta-2 p-4 text-sm">
+          <p className="mb-3 font-medium text-foreground">
+            Reset all scores to the last saved values? Any unsaved changes will
+            be lost.
+          </p>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                setRows({ ...savedRows.current });
+                setShowResetConfirm(false);
+              }}
+              className="rounded-lg bg-meta-4 px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+            >
+              Yes, reset
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowResetConfirm(false)}
+              className="rounded-lg border border-stroke bg-white px-4 py-2 text-sm font-semibold text-body hover:bg-whiter"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </form>
   );
 }
