@@ -216,6 +216,7 @@ export function TakeTest({
             className={`text-2xl font-bold tabular-nums ${
               remaining < 60_000 ? "text-meta-1" : "text-foreground"
             }`}
+            aria-label={`Time remaining: ${Math.max(0, Math.ceil(remaining / 60000))} minute${Math.ceil(remaining / 60000) === 1 ? "" : "s"}`}
           >
             {formatRemaining(remaining)}
           </p>

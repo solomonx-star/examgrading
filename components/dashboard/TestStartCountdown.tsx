@@ -62,11 +62,10 @@ export function TestStartCountdown({
       <span
         className="inline-flex items-center gap-1 rounded-full bg-secondary/20 px-2.5 py-0.5 text-xs font-medium text-foreground tabular-nums"
         title={new Date(startsAtIso).toLocaleString("en-GB")}
-        aria-live="polite"
       >
         <span className="text-body">{tense}</span>
         {parts.days > 0 ? <span>{parts.days}d</span> : null}
-        <span>
+        <span aria-hidden>
           {pad(parts.hours)}:{pad(parts.minutes)}:{pad(parts.seconds)}
         </span>
       </span>
@@ -75,13 +74,14 @@ export function TestStartCountdown({
 
   return (
     <div className="rounded-2xl border border-stroke bg-white p-8 text-center shadow-sm">
+      {/* Announce only when the test opens — not every tick */}
+      <p aria-live="polite" className="sr-only">
+        {parts.totalMs <= 0 ? "The test is now open. The page is refreshing." : ""}
+      </p>
       <p className="text-xs font-medium uppercase tracking-wide text-body">
         {tense}
       </p>
-      <p
-        className="mt-2 text-4xl font-bold tabular-nums text-foreground"
-        aria-live="polite"
-      >
+      <p className="mt-2 text-4xl font-bold tabular-nums text-foreground" aria-hidden>
         {parts.days > 0 ? `${parts.days}d ` : ""}
         {pad(parts.hours)}:{pad(parts.minutes)}:{pad(parts.seconds)}
       </p>
