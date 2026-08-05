@@ -264,10 +264,10 @@ export default async function StudentModulePage({
                 </td>
               </tr>
             ) : (
-              attendance.map((a, i) => {
+              attendance.map((a) => {
                 const s = a.status as "present" | "absent" | "late";
                 return (
-                  <tr key={i} className="hover:bg-whiter">
+                  <tr key={String(a.date) + a.status} className="hover:bg-whiter">
                     <td className="px-5 py-2.5 text-body">
                       {formatDate(a.date)}
                     </td>
