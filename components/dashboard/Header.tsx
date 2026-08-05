@@ -13,13 +13,13 @@ function SignOutButton() {
       type="submit"
       disabled={pending}
       aria-busy={pending}
-      className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-stroke px-3 text-xs font-semibold text-body transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:border-stroke disabled:hover:text-body"
+      className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-stroke px-3 text-xs font-semibold text-body transition motion-reduce:transition-none hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:border-stroke disabled:hover:text-body"
     >
       {pending && (
         <svg
           viewBox="0 0 24 24"
           fill="none"
-          className="h-3.5 w-3.5 animate-spin"
+          className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none"
           aria-hidden
         >
           <circle
