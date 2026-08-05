@@ -170,7 +170,7 @@ export function BellDropdown({ initialData }: { initialData: BellData }) {
 
       {open && (
         <div
-          role="dialog"
+          role="region"
           aria-label="Notifications"
           className="absolute right-0 z-40 mt-2 w-80 max-w-[calc(100vw-1rem)] rounded-xl border border-stroke bg-white shadow-2xl"
         >
