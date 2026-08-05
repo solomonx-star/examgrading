@@ -9,19 +9,9 @@ import { requireActiveStudentAccess } from "@/lib/student-scope";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { AutoRefresh } from "@/components/ui/AutoRefresh";
 import { TestStartCountdown } from "@/components/dashboard/TestStartCountdown";
-import { formatPercent } from "@/lib/format";
+import { formatDateTime, formatPercent } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
-
-function formatDateTime(d: Date | string): string {
-  return new Date(d).toLocaleString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
 
 export default async function StudentTestsListPage({
   params,

@@ -4,18 +4,9 @@ import { Test } from "@/models/Test";
 import { TestSubmission } from "@/models/TestSubmission";
 import { requireLecturerCourse } from "@/lib/lecturer-course";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { formatDateTime } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
-
-function formatDateTime(d: Date | string): string {
-  return new Date(d).toLocaleString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
 
 function windowStatus(now: Date, startsAt: Date, endsAt: Date): {
   label: string;
