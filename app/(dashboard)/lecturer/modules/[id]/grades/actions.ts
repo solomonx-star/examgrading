@@ -128,6 +128,7 @@ export async function saveGradesAction(
         lecturerId: lecturerObjectId,
         testScore: r.testScore,
         testMaxScore,
+        testMode,
         examScore: r.examScore,
         examMaxScore: 100,
         calculatedScore: result.finalScore,

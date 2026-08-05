@@ -64,10 +64,10 @@ export default async function LecturerGradesPage({
   );
   const anyPublished = existingGrades.some((g) => g.isPublished);
 
-  // If any saved grade used testMaxScore === caWeight, the lecturer is in
-  // pre-calculated mode. Default to raw otherwise.
-  const initialTestMode: "raw" | "precalc" = existingGrades.some(
-    (g) => g.testMaxScore === rule.caWeight,
+  // Prefer the explicit testMode field stored on the grade record. Fall back to
+  // the testMaxScore heuristic for grades saved before the field was added.
+  const initialTestMode: "raw" | "precalc" = existingGrades.some((g) =>
+    g.testMode ? g.testMode === "precalc" : g.testMaxScore === rule.caWeight,
   )
     ? "precalc"
     : "raw";
