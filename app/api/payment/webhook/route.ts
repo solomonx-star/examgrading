@@ -16,7 +16,7 @@ export async function POST(req: Request) {
   try {
     rawBody = await req.text();
   } catch {
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ error: "Failed to read body" }, { status: 400 });
   }
 
   const hasSignature =
@@ -28,19 +28,22 @@ export async function POST(req: Request) {
     console.warn(
       "[monime webhook] Missing raw body or signature header — rejecting",
     );
-    return NextResponse.json({ success: true });
+    return NextResponse.json(
+      { error: "Missing signature" },
+      { status: 400 },
+    );
   }
 
   if (!verifyWebhookSignature(rawBody, req.headers)) {
     console.warn("[monime webhook] Invalid signature — rejecting");
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
   let event: unknown = null;
   try {
     event = JSON.parse(rawBody);
   } catch {
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
   // Fire-and-forget — Monime expects a fast 200, retries on non-2xx.
