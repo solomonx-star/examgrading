@@ -141,6 +141,7 @@ export function AttendanceSheet({
                             }
                             className="h-4 w-4 border-stroke text-primary focus:ring-primary"
                           />
+                          <span className="sr-only">{val} — {s.name}</span>
                         </label>
                       </td>
                     ))}
