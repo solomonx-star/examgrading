@@ -17,11 +17,6 @@ import { zodToError, type FormState } from "@/lib/form-state";
 
 const objectIdRe = /^[a-f\d]{24}$/i;
 
-const studentRowSchema = z.object({
-  studentId: z.string().regex(objectIdRe),
-  testScore: z.coerce.number().min(0).max(100),
-  examScore: z.coerce.number().min(0).max(100),
-});
 
 function parseStudentRows(
   formData: FormData,
@@ -78,22 +73,6 @@ export async function saveGradesAction(
     };
   }
 
-  const rowsRaw = parseStudentRows(formData);
-  const rows: Array<z.infer<typeof studentRowSchema>> = [];
-  for (const r of rowsRaw) {
-    const parsed = studentRowSchema.safeParse(r);
-    if (!parsed.success) {
-      return { ok: false, error: zodToError(parsed.error) };
-    }
-    rows.push(parsed.data);
-  }
-
-  const enrolled = new Set(mod.enrolledStudents.map((s) => String(s)));
-  const allowed = rows.filter((r) => enrolled.has(r.studentId));
-  if (allowed.length === 0) {
-    return { ok: false, error: "No valid student rows to save." };
-  }
-
   const rule = await getEffectiveGradingRule(courseId);
   if (!rule) {
     return {
@@ -105,6 +84,28 @@ export async function saveGradesAction(
 
   const testMode = formData.get("testMode") === "precalc" ? "precalc" : "raw";
   const testMaxScore = testMode === "precalc" ? rule.caWeight : 100;
+
+  const rowSchema = z.object({
+    studentId: z.string().regex(objectIdRe),
+    testScore: z.coerce.number().min(0).max(testMaxScore),
+    examScore: z.coerce.number().min(0).max(100),
+  });
+
+  const rowsRaw = parseStudentRows(formData);
+  const rows: Array<z.infer<typeof rowSchema>> = [];
+  for (const r of rowsRaw) {
+    const parsed = rowSchema.safeParse(r);
+    if (!parsed.success) {
+      return { ok: false, error: zodToError(parsed.error) };
+    }
+    rows.push(parsed.data);
+  }
+
+  const enrolled = new Set(mod.enrolledStudents.map((s) => String(s)));
+  const allowed = rows.filter((r) => enrolled.has(r.studentId));
+  if (allowed.length === 0) {
+    return { ok: false, error: "No valid student rows to save." };
+  }
 
   const attendanceFlags = await computeAttendanceMet(
     courseId,
