@@ -12,6 +12,7 @@ import { calculateGrade } from "@/lib/grading";
 import { useToastFromState } from "@/lib/use-toast-state";
 import type { FormState } from "@/lib/form-state";
 import type { IGradeBand } from "@/models/GradingRule";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 
 type Student = {
   id: string;
@@ -85,6 +86,8 @@ export function GradeSheet({
   const [submitPending, startSubmit] = useTransition();
   const [recallPending, startRecall] = useTransition();
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [submitConfirm, setSubmitConfirm] = useState(false);
+  const [recallConfirm, setRecallConfirm] = useState(false);
 
   const bound = saveGradesAction.bind(null, courseId);
   const [state, formAction] = useActionState<FormState, FormData>(
@@ -266,6 +269,7 @@ export function GradeSheet({
                           onChange={(e) =>
                             updateRow(s.id, "testScore", e.target.value)
                           }
+                          aria-label={`Test score for ${s.name}`}
                           className="w-20 rounded-md border border-stroke bg-white px-2 py-1 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:bg-whiter disabled:text-body"
                         />
                       </td>
@@ -282,6 +286,7 @@ export function GradeSheet({
                           onChange={(e) =>
                             updateRow(s.id, "examScore", e.target.value)
                           }
+                          aria-label={`Exam score for ${s.name}`}
                           className="w-20 rounded-md border border-stroke bg-white px-2 py-1 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:bg-whiter disabled:text-body"
                         />
                       </td>
@@ -374,28 +379,7 @@ export function GradeSheet({
         <button
           type="button"
           disabled={submitPending || locked || students.length === 0}
-          onClick={() => {
-            if (
-              !confirm(
-                "Submit these grades to the admin for review? You will not be able to edit until they are recalled or unpublished.",
-              )
-            )
-              return;
-            startSubmit(async () => {
-              try {
-                const res = await submitGradesAction(courseId);
-                if (res.ok) {
-                  toast.success(
-                    `Submitted ${res.count ?? 0} grade${res.count === 1 ? "" : "s"} for review.`,
-                  );
-                } else {
-                  toast.error(res.error ?? "Could not submit.");
-                }
-              } catch {
-                toast.error("Could not submit grades.");
-              }
-            });
-          }}
+          onClick={() => setSubmitConfirm(true)}
           className="inline-flex items-center rounded-lg border border-primary/40 bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-50"
         >
           {submitPending ? "Submitting…" : "Submit for review"}
@@ -404,26 +388,7 @@ export function GradeSheet({
         <button
           type="button"
           disabled={recallPending || !locked || anyPublished}
-          onClick={() => {
-            if (
-              !confirm(
-                "Recall this submission so you can edit again? This only works if the admin hasn't published any of the grades.",
-              )
-            )
-              return;
-            startRecall(async () => {
-              try {
-                const res = await recallSubmissionAction(courseId);
-                if (res.ok) {
-                  toast.success("Submission recalled. You can edit again.");
-                } else {
-                  toast.error(res.error ?? "Could not recall.");
-                }
-              } catch {
-                toast.error("Could not recall submission.");
-              }
-            });
-          }}
+          onClick={() => setRecallConfirm(true)}
           className="inline-flex items-center rounded-lg border border-meta-1/40 px-4 py-2.5 text-sm font-semibold text-meta-1 hover:bg-meta-1/10 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {recallPending ? "Recalling…" : "Recall submission"}
@@ -445,6 +410,57 @@ export function GradeSheet({
           and publication.
         </span>
       </div>
+
+      <ConfirmModal
+        open={submitConfirm}
+        title="Submit grades for review?"
+        description="You will not be able to edit until the grades are recalled or unpublished by the admin."
+        confirmLabel="Submit"
+        tone="primary"
+        pending={submitPending}
+        onConfirm={() => {
+          startSubmit(async () => {
+            try {
+              const res = await submitGradesAction(courseId);
+              setSubmitConfirm(false);
+              if (res.ok) {
+                toast.success(
+                  `Submitted ${res.count ?? 0} grade${res.count === 1 ? "" : "s"} for review.`,
+                );
+              } else {
+                toast.error(res.error ?? "Could not submit.");
+              }
+            } catch {
+              toast.error("Could not submit grades.");
+            }
+          });
+        }}
+        onCancel={() => setSubmitConfirm(false)}
+      />
+      <ConfirmModal
+        open={recallConfirm}
+        title="Recall submission?"
+        description="This will unlock the grade sheet for editing. It only works if the admin has not yet published any of the grades."
+        confirmLabel="Recall"
+        tone="danger"
+        pending={recallPending}
+        onConfirm={() => {
+          startRecall(async () => {
+            try {
+              const res = await recallSubmissionAction(courseId);
+              setRecallConfirm(false);
+              if (res.ok) {
+                toast.success("Submission recalled. You can edit again.");
+              } else {
+                toast.error(res.error ?? "Could not recall.");
+              }
+            } catch {
+              toast.error("Could not recall submission.");
+            }
+          });
+        }}
+        onCancel={() => setRecallConfirm(false)}
+      />
 
       {showResetConfirm && (
         <div className="rounded-2xl border border-stroke bg-meta-2 p-4 text-sm">
