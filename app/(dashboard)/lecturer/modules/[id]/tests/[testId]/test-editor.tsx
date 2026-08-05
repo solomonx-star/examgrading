@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useRef, useState, useTransition } from "react";
+import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -11,6 +12,7 @@ import {
 } from "../actions";
 import { useToastFromState } from "@/lib/use-toast-state";
 import type { FormState } from "@/lib/form-state";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 
 type QuestionType = "mcq" | "true_false" | "multi";
 
@@ -102,6 +104,8 @@ export function TestEditor({
     preview: string;
     chars: number;
   } | null>(null);
+  const [pubConfirm, setPubConfirm] = useState(false);
+  const [delConfirm, setDelConfirm] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   async function handlePdfImport(file: File) {
@@ -299,10 +303,11 @@ export function TestEditor({
           className="space-y-5 rounded-2xl border border-stroke bg-white p-6 shadow-sm"
         >
           <div>
-            <label className="block text-xs font-medium uppercase tracking-wide text-body">
+            <label htmlFor="test-title" className="block text-xs font-medium uppercase tracking-wide text-body">
               Title
             </label>
             <input
+              id="test-title"
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -311,10 +316,11 @@ export function TestEditor({
             />
           </div>
           <div>
-            <label className="block text-xs font-medium uppercase tracking-wide text-body">
+            <label htmlFor="test-description" className="block text-xs font-medium uppercase tracking-wide text-body">
               Description
             </label>
             <textarea
+              id="test-description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
@@ -324,10 +330,11 @@ export function TestEditor({
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
-              <label className="block text-xs font-medium uppercase tracking-wide text-body">
+              <label htmlFor="test-starts-at" className="block text-xs font-medium uppercase tracking-wide text-body">
                 Opens at
               </label>
               <input
+                id="test-starts-at"
                 type="datetime-local"
                 value={startsAt}
                 onChange={(e) => setStartsAt(e.target.value)}
@@ -335,10 +342,11 @@ export function TestEditor({
               />
             </div>
             <div>
-              <label className="block text-xs font-medium uppercase tracking-wide text-body">
+              <label htmlFor="test-ends-at" className="block text-xs font-medium uppercase tracking-wide text-body">
                 Closes at
               </label>
               <input
+                id="test-ends-at"
                 type="datetime-local"
                 value={endsAt}
                 onChange={(e) => setEndsAt(e.target.value)}
@@ -346,10 +354,11 @@ export function TestEditor({
               />
             </div>
             <div>
-              <label className="block text-xs font-medium uppercase tracking-wide text-body">
+              <label htmlFor="test-duration" className="block text-xs font-medium uppercase tracking-wide text-body">
                 Time limit (min)
               </label>
               <input
+                id="test-duration"
                 type="number"
                 min={1}
                 max={600}
@@ -627,23 +636,7 @@ export function TestEditor({
             <button
               type="button"
               disabled={pubPending || questions.length === 0}
-              onClick={() => {
-                if (
-                  !confirm(
-                    "Publish this test? Students enrolled in the module will be able to take it during its window.",
-                  )
-                )
-                  return;
-                startPub(async () => {
-                  const res = await publishTestAction(courseId, testId);
-                  if (res.ok) {
-                    toast.success("Test published.");
-                    router.refresh();
-                  } else {
-                    toast.error(res.error ?? "Could not publish.");
-                  }
-                });
-              }}
+              onClick={() => setPubConfirm(true)}
               className="inline-flex items-center rounded-lg border border-meta-3/40 bg-meta-3 px-4 py-2.5 text-sm font-semibold text-white hover:bg-meta-3/90 disabled:opacity-50"
             >
               {pubPending ? "Publishing…" : "Publish test"}
@@ -653,38 +646,66 @@ export function TestEditor({
           <button
             type="button"
             disabled={delPending || anySubmissions}
-            onClick={() => {
-              if (
-                !confirm(
-                  "Delete this test? This cannot be undone. Tests with submissions cannot be deleted.",
-                )
-              )
-                return;
-              startDel(async () => {
-                const res = await deleteTestAction(courseId, testId);
-                if (!res.ok) {
-                  toast.error(res.error ?? "Could not delete.");
-                }
-              });
-            }}
+            onClick={() => setDelConfirm(true)}
             className="ml-auto inline-flex items-center rounded-lg border border-meta-1/40 px-3 py-2 text-xs font-semibold text-meta-1 hover:bg-meta-1/10 disabled:opacity-50"
           >
             {delPending ? "Deleting…" : "Delete test"}
           </button>
         </div>
       </form>
+
+      <ConfirmModal
+        open={pubConfirm}
+        title="Publish test?"
+        description="Students enrolled in the module will be able to take it during its window."
+        confirmLabel="Publish"
+        tone="primary"
+        pending={pubPending}
+        onConfirm={() => {
+          startPub(async () => {
+            const res = await publishTestAction(courseId, testId);
+            setPubConfirm(false);
+            if (res.ok) {
+              toast.success("Test published.");
+              router.refresh();
+            } else {
+              toast.error(res.error ?? "Could not publish.");
+            }
+          });
+        }}
+        onCancel={() => setPubConfirm(false)}
+      />
+      <ConfirmModal
+        open={delConfirm}
+        title="Delete test?"
+        description="This cannot be undone. Tests with submissions cannot be deleted."
+        confirmLabel="Delete"
+        tone="danger"
+        pending={delPending}
+        onConfirm={() => {
+          startDel(async () => {
+            const res = await deleteTestAction(courseId, testId);
+            setDelConfirm(false);
+            if (!res.ok) {
+              toast.error(res.error ?? "Could not delete.");
+            }
+          });
+        }}
+        onCancel={() => setDelConfirm(false)}
+      />
     </div>
   );
 }
 
 function SaveButton({ disabled }: { disabled?: boolean }) {
+  const { pending } = useFormStatus();
   return (
     <button
       type="submit"
-      disabled={disabled}
+      disabled={disabled || pending}
       className="inline-flex items-center rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-dark disabled:opacity-60"
     >
-      Save changes
+      {pending ? "Saving…" : "Save changes"}
     </button>
   );
 }
