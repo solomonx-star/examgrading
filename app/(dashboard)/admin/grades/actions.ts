@@ -237,7 +237,7 @@ export async function publishStudentGradesAction(args: {
   const result = await Grade.updateMany(
     {
       courseId: { $in: moduleIds },
-      studentId: parsed.data.studentId,
+      studentId: new mongoose.Types.ObjectId(parsed.data.studentId),
       academicYear: parsed.data.academicYear,
       semester: parsed.data.semester,
       submissionStatus: "submitted",
@@ -324,7 +324,7 @@ export async function unpublishStudentGradesAction(args: {
   const result = await Grade.updateMany(
     {
       courseId: { $in: moduleIds },
-      studentId: parsed.data.studentId,
+      studentId: new mongoose.Types.ObjectId(parsed.data.studentId),
       academicYear: parsed.data.academicYear,
       semester: parsed.data.semester,
       isPublished: true,
