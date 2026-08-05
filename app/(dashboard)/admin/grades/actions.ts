@@ -388,6 +388,7 @@ export async function publishCohortGradesAction(args: {
     parsed.data.semester,
   );
 
+  const batchStartTime = new Date();
   const result = await Grade.updateMany(
     {
       courseId: { $in: moduleIds },
@@ -399,7 +400,7 @@ export async function publishCohortGradesAction(args: {
     {
       $set: {
         isPublished: true,
-        publishedAt: new Date(),
+        publishedAt: batchStartTime,
         publishedBy: new mongoose.Types.ObjectId(me.userId),
       },
     },
@@ -426,13 +427,14 @@ export async function publishCohortGradesAction(args: {
     },
   });
 
-  // Find the distinct students who actually had grades published and notify each.
+  // Find the distinct students whose grades were just published in this batch.
+  // Query by publishedAt >= batchStartTime rather than publishedBy so students
+  // whose grades were previously touched by a different admin are not excluded.
   const publishedStudents = await Grade.distinct("studentId", {
     courseId: { $in: moduleIds },
     academicYear: parsed.data.academicYear,
     semester: parsed.data.semester,
-    isPublished: true,
-    publishedBy: new mongoose.Types.ObjectId(me.userId),
+    publishedAt: { $gte: batchStartTime },
   });
   await notifyMany(
     publishedStudents.map((sid) => String(sid)),
