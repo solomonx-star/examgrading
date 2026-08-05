@@ -171,6 +171,7 @@ async function moduleIdsForCohort(
   academicYear: string,
   semester: "First" | "Second" | "Summer",
 ): Promise<mongoose.Types.ObjectId[]> {
+  await connectDB();
   const modules = await Module.find({
     programmeIds: programmeId,
     yearLevel,
@@ -184,6 +185,7 @@ async function moduleIdsForCohort(
 
 async function programmeExists(programmeId: string): Promise<boolean> {
   if (!mongoose.Types.ObjectId.isValid(programmeId)) return false;
+  await connectDB();
   const p = await Programme.findOne({ _id: programmeId }).select("_id").lean();
   return !!p;
 }
