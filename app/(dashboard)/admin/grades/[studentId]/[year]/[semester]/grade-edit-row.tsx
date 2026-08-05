@@ -95,7 +95,7 @@ export function GradeEditRow({
         </span>
         <span className="block sm:inline">{row.moduleName}</span>
       </td>
-      <td className="hidden px-4 py-3 text-right md:table-cell">
+      <td className={`px-4 py-3 text-right ${editing ? "table-cell" : "hidden md:table-cell"}`}>
         {editing ? (
           <input
             type="number"
@@ -104,6 +104,7 @@ export function GradeEditRow({
             step="0.01"
             value={test}
             onChange={(e) => setTest(e.target.value)}
+            aria-label={`Test score for ${row.moduleName}`}
             className="w-20 rounded-md border border-stroke bg-white px-2 py-1 text-right text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             disabled={pending}
           />
@@ -113,7 +114,7 @@ export function GradeEditRow({
           </span>
         )}
       </td>
-      <td className="hidden px-4 py-3 text-right md:table-cell">
+      <td className={`px-4 py-3 text-right ${editing ? "table-cell" : "hidden md:table-cell"}`}>
         {editing ? (
           <input
             type="number"
@@ -122,6 +123,7 @@ export function GradeEditRow({
             step="0.01"
             value={exam}
             onChange={(e) => setExam(e.target.value)}
+            aria-label={`Exam score for ${row.moduleName}`}
             className="w-20 rounded-md border border-stroke bg-white px-2 py-1 text-right text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             disabled={pending}
           />
