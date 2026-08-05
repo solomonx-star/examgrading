@@ -34,13 +34,14 @@ export function SidebarNav({
       <nav className="flex-1 space-y-1 px-3 py-4">
         {items.map((item) => {
           const active =
-            pathname === item.href
-            // (item.href !== "/" && pathname.startsWith(`${item.href}/`));
+            pathname === item.href ||
+            (item.href !== "/" && pathname.startsWith(`${item.href}/`));
           return (
             <Link
               key={item.href}
               href={item.href}
               onClick={onLinkClick}
+              aria-current={active ? "page" : undefined}
               className={
                 "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition " +
                 (active
