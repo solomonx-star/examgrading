@@ -10,6 +10,7 @@ export interface IGrade {
   lecturerId: Types.ObjectId;
   testScore: number;
   testMaxScore: number;
+  testMode?: "raw" | "precalc";
   examScore: number;
   examMaxScore: number;
   calculatedScore?: number;
@@ -50,6 +51,7 @@ const GradeSchema = new Schema<IGrade>(
     },
     testScore: { type: Number, default: 0, min: 0 },
     testMaxScore: { type: Number, default: 100, min: 1 },
+    testMode: { type: String, enum: ["raw", "precalc"] },
     examScore: { type: Number, default: 0, min: 0 },
     examMaxScore: { type: Number, default: 100, min: 1 },
     calculatedScore: { type: Number, min: 0, max: 100 },
