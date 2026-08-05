@@ -203,6 +203,7 @@ export async function submitGradesAction(
   }
   revalidatePath(`/lecturer/modules/${courseId}/grades`);
   revalidatePath(`/lecturer/modules/${courseId}`);
+  revalidatePath("/admin/grades");
   await audit({
     action: "grade.submit",
     summary: `Submitted ${result.modifiedCount ?? 0} grade${result.modifiedCount === 1 ? "" : "s"} for review in ${mod.code} (${mod.academicYear} · ${mod.semester})`,
@@ -290,6 +291,7 @@ export async function recallSubmissionAction(
   );
   revalidatePath(`/lecturer/modules/${courseId}/grades`);
   revalidatePath(`/lecturer/modules/${courseId}`);
+  revalidatePath("/admin/grades");
   await audit({
     action: "grade.recall",
     summary: `Recalled submitted grades for ${mod.code} (${mod.academicYear} · ${mod.semester})`,

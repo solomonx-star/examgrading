@@ -82,6 +82,8 @@ export async function saveAttendanceAction(
   revalidatePath(`/lecturer/modules/${courseId}/attendance`);
   revalidatePath(`/lecturer/modules/${courseId}/grades`);
   revalidatePath(`/lecturer/modules/${courseId}`);
+  revalidatePath(`/student/modules/${courseId}`);
+  revalidatePath("/student/attendance");
   await audit({
     action: "attendance.save",
     summary: `Recorded attendance for ${allowed.length} student${allowed.length === 1 ? "" : "s"} on ${date.data} in ${mod.code}`,

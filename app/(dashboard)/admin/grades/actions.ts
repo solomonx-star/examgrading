@@ -162,6 +162,8 @@ export async function adminEditGradeAction(args: {
   }
 
   revalidatePath("/admin/grades");
+  revalidatePath("/student/grades");
+  revalidatePath("/student/transcript");
   return { ok: true };
 }
 
@@ -259,6 +261,8 @@ export async function publishStudentGradesAction(args: {
     };
   }
   revalidatePath("/admin/grades");
+  revalidatePath("/student/grades");
+  revalidatePath("/student/transcript");
   await audit({
     action: "grade.publish.student",
     summary: `Published ${result.modifiedCount} grade${result.modifiedCount === 1 ? "" : "s"} for one student (${parsed.data.academicYear} · ${parsed.data.semester})`,
@@ -338,6 +342,8 @@ export async function unpublishStudentGradesAction(args: {
     return { ok: false, error: "Nothing to unpublish." };
   }
   revalidatePath("/admin/grades");
+  revalidatePath("/student/grades");
+  revalidatePath("/student/transcript");
   await audit({
     action: "grade.unpublish.student",
     summary: `Unpublished ${result.modifiedCount} grade${result.modifiedCount === 1 ? "" : "s"} for one student (${parsed.data.academicYear} · ${parsed.data.semester})`,
@@ -411,6 +417,8 @@ export async function publishCohortGradesAction(args: {
     };
   }
   revalidatePath("/admin/grades");
+  revalidatePath("/student/grades");
+  revalidatePath("/student/transcript");
   await audit({
     action: "grade.publish.cohort",
     summary: `Published ${result.modifiedCount} grade${result.modifiedCount === 1 ? "" : "s"} across cohort (Year ${parsed.data.yearLevel} · ${parsed.data.academicYear} · ${parsed.data.semester})`,
