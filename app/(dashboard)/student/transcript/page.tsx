@@ -25,6 +25,8 @@ type Row = {
   remark: string | null;
 };
 
+const PASS_GPA = 2.9;
+
 function periodKey(year: string, semester: string) {
   return `${year}::${semester}`;
 }
@@ -179,7 +181,9 @@ export default async function StudentTranscriptPage() {
                   </h2>
                   <p className="text-xs text-body">
                     Semester GPA{" "}
-                    <span className="font-semibold text-foreground">
+                    <span
+                      className={`font-semibold ${pgpa.gpa === null ? "text-foreground" : pgpa.gpa >= PASS_GPA ? "text-meta-3" : "text-meta-1"}`}
+                    >
                       {pgpa.gpa === null ? "—" : pgpa.gpa.toFixed(2)}
                     </span>{" "}
                     · {pgpa.count} module{pgpa.count === 1 ? "" : "s"}
@@ -218,7 +222,9 @@ export default async function StudentTranscriptPage() {
                         <td className="hidden px-5 py-2 text-body sm:table-cell print:table-cell print:px-0">
                           {r.remark ?? "—"}
                         </td>
-                        <td className="px-5 py-2 text-right text-body print:px-0">
+                        <td
+                          className={`px-5 py-2 text-right font-semibold print:px-0 ${r.gpa === null ? "text-body" : r.gpa >= PASS_GPA ? "text-meta-3" : "text-meta-1"}`}
+                        >
                           {r.gpa?.toFixed(2) ?? "—"}
                         </td>
                       </tr>
@@ -235,7 +241,9 @@ export default async function StudentTranscriptPage() {
                 <p className="text-xs uppercase tracking-wide text-body">
                   Cumulative
                 </p>
-                <p className="text-2xl font-bold text-foreground">
+                <p
+                  className={`text-2xl font-bold ${cumulative.gpa === null ? "text-foreground" : cumulative.gpa >= PASS_GPA ? "text-meta-3" : "text-meta-1"}`}
+                >
                   {cumulative.gpa === null
                     ? "—"
                     : cumulative.gpa.toFixed(2)}
