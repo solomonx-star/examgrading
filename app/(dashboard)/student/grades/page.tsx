@@ -26,8 +26,15 @@ type Row = {
   remark: string | null;
 };
 
+const PASS_GPA = 2.9;
+
 function periodKey(year: string, semester: string) {
   return `${year}::${semester}`;
+}
+
+function gpaColor(gpa: number | null): "pass" | "fail" | undefined {
+  if (gpa === null) return undefined;
+  return gpa >= PASS_GPA ? "pass" : "fail";
 }
 
 export default async function StudentGradesPage() {
@@ -93,6 +100,7 @@ export default async function StudentGradesPage() {
         <StatCard
           label="Current semester GPA"
           value={currentGPA.gpa === null ? "—" : currentGPA.gpa.toFixed(2)}
+          valueColor={gpaColor(currentGPA.gpa)}
           hint={
             current
               ? `${current.year} · ${current.semester}`
@@ -102,6 +110,7 @@ export default async function StudentGradesPage() {
         <StatCard
           label="Cumulative GPA"
           value={cumulative.gpa === null ? "—" : cumulative.gpa.toFixed(2)}
+          valueColor={gpaColor(cumulative.gpa)}
           hint={`${cumulative.count} module${cumulative.count === 1 ? "" : "s"}`}
         />
         <StatCard label="Published modules" value={rows.length} />
@@ -143,7 +152,9 @@ export default async function StudentGradesPage() {
                   </h2>
                   <p className="text-xs text-body">
                     GPA{" "}
-                    <span className="font-semibold text-foreground">
+                    <span
+                      className={`font-semibold ${pgpa.gpa === null ? "text-foreground" : pgpa.gpa >= PASS_GPA ? "text-meta-3" : "text-meta-1"}`}
+                    >
                       {pgpa.gpa === null ? "—" : pgpa.gpa.toFixed(2)}
                     </span>{" "}
                     · {pgpa.count} module{pgpa.count === 1 ? "" : "s"}
@@ -181,7 +192,9 @@ export default async function StudentGradesPage() {
                         <td className="hidden px-5 py-2.5 text-body sm:table-cell">
                           {r.remark ?? "—"}
                         </td>
-                        <td className="px-5 py-2.5 text-right text-body">
+                        <td
+                          className={`px-5 py-2.5 text-right font-semibold ${r.gpa === null ? "text-body" : r.gpa >= PASS_GPA ? "text-meta-3" : "text-meta-1"}`}
+                        >
                           {r.gpa?.toFixed(2) ?? "—"}
                         </td>
                       </tr>
