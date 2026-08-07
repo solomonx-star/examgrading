@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireStudentScope } from "@/lib/student-scope";
 import { getStudentAccessSummary } from "@/lib/payments-service";
+import { getBalance } from "@/lib/ai-credits-service";
 import { connectDB } from "@/lib/db";
 import { AccessPayment } from "@/models/AccessPayment";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -10,7 +11,10 @@ export const dynamic = "force-dynamic";
 
 export default async function StudentAccessPage() {
   const me = await requireStudentScope();
-  const summary = await getStudentAccessSummary(me.userId);
+  const [summary, aiBalance] = await Promise.all([
+    getStudentAccessSummary(me.userId),
+    getBalance(me.userId),
+  ]);
 
   await connectDB();
   const history = await AccessPayment.find({ student: me.userId })
@@ -68,6 +72,28 @@ export default async function StudentAccessPage() {
           </div>
         </div>
       )}
+
+      <div className="mt-6 rounded-2xl border border-stroke bg-white p-5 shadow-sm">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wide text-body">
+              AI Credits
+            </p>
+            <p className="mt-1 text-2xl font-bold text-foreground">
+              {aiBalance}{" "}
+              <span className="text-sm font-normal text-body">
+                credit{aiBalance === 1 ? "" : "s"}
+              </span>
+            </p>
+          </div>
+          <Link
+            href="/student/credits"
+            className="text-xs font-medium text-primary hover:underline"
+          >
+            View history →
+          </Link>
+        </div>
+      </div>
 
       <div className="mt-8">
         <h2 className="mb-3 text-sm font-semibold text-foreground">
