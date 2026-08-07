@@ -145,36 +145,31 @@ export function verifyWebhookSignature(
   if (tMatch && v1Match) {
     const timestamp = tMatch[1];
     const receivedSig = v1Match[1];
-    const signedPayload = `${timestamp}.${rawBody}`;
 
-    const expected = crypto
-      .createHmac("sha256", secret)
-      .update(signedPayload)
-      .digest("base64");
+    // Try all plausible signed payload formats
+    const candidates: Record<string, string> = {
+      "t.body":       `${timestamp}.${rawBody}`,
+      "t,body":       `${timestamp},${rawBody}`,
+      "tbody":        `${timestamp}${rawBody}`,
+      "theader.body": `t=${timestamp}.${rawBody}`,
+      "fullheader.body": `${sigHeader.split(",v1=")[0]}.${rawBody}`,
+      "body":         rawBody,
+    };
 
-    try {
-      const a = Buffer.from(receivedSig, "base64");
-      const b = Buffer.from(expected, "base64");
-      if (a.length === b.length && crypto.timingSafeEqual(a, b)) return true;
-    } catch { /* fall through */ }
+    for (const [label, payload] of Object.entries(candidates)) {
+      const expB64 = crypto.createHmac("sha256", secret).update(payload).digest("base64");
+      // Log first 8 chars of expected vs received for diagnosis (safe — too short to reverse)
+      console.log(`[webhook sig] format=${label} expected=${expB64.slice(0,8)} received=${receivedSig.slice(0,8)}`);
+      try {
+        const a = Buffer.from(receivedSig, "base64");
+        const b = Buffer.from(expB64, "base64");
+        if (a.length === b.length && crypto.timingSafeEqual(a, b)) {
+          console.log(`[webhook sig] MATCH on format=${label}`);
+          return true;
+        }
+      } catch { /* fall through */ }
+    }
   }
-
-  // Fallback: plain signature without timestamp (older format)
-  const plain = sigHeader.replace(/^sha256=/, "").trim();
-  const expectedHex = crypto.createHmac("sha256", secret).update(rawBody).digest("hex");
-  const expectedB64 = crypto.createHmac("sha256", secret).update(rawBody).digest("base64");
-
-  try {
-    const a = Buffer.from(plain, "hex");
-    const b = Buffer.from(expectedHex, "hex");
-    if (a.length > 0 && a.length === b.length && crypto.timingSafeEqual(a, b)) return true;
-  } catch { /* fall through */ }
-
-  try {
-    const a = Buffer.from(plain, "base64");
-    const b = Buffer.from(expectedB64, "base64");
-    if (a.length > 0 && a.length === b.length && crypto.timingSafeEqual(a, b)) return true;
-  } catch { /* fall through */ }
 
   return false;
 }
