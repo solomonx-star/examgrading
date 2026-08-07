@@ -22,6 +22,14 @@ export default async function StudentAccessPage() {
     .limit(20)
     .lean();
 
+  const periodEndDate = summary.period ? new Date(summary.period.endDate) : null;
+  const now = new Date();
+  const daysLeft = periodEndDate
+    ? Math.ceil((periodEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+    : null;
+  const isExpiringSoon = daysLeft !== null && daysLeft <= 14 && daysLeft > 0;
+  const hasExpired = daysLeft !== null && daysLeft <= 0;
+
   return (
     <div>
       <PageHeader
@@ -40,11 +48,29 @@ export default async function StudentAccessPage() {
           No payment required.
         </div>
       ) : summary.hasActiveAccess ? (
-        <div className="rounded-2xl border border-meta-3/30 bg-meta-3/5 p-6 text-sm shadow-sm">
-          <p className="font-semibold text-meta-3">Access is active</p>
-          <p className="mt-1 text-body">
-            You have paid for {summary.period.year} · {summary.period.semester}.
+        <div className={`rounded-2xl border p-6 text-sm shadow-sm ${
+          hasExpired
+            ? "border-meta-1/30 bg-meta-1/5"
+            : isExpiringSoon
+              ? "border-secondary/30 bg-secondary/5"
+              : "border-meta-3/30 bg-meta-3/5"
+        }`}>
+          <p className={`font-semibold ${hasExpired ? "text-meta-1" : isExpiringSoon ? "text-secondary" : "text-meta-3"}`}>
+            {hasExpired ? "Access has expired" : "Access is active"}
           </p>
+          <p className="mt-1 text-body">
+            {summary.period!.year} · {summary.period!.semester} semester
+          </p>
+          {periodEndDate && (
+            <p className={`mt-2 text-xs font-medium ${
+              hasExpired ? "text-meta-1" : isExpiringSoon ? "text-secondary" : "text-body"
+            }`}>
+              {hasExpired
+                ? `Expired on ${periodEndDate.toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" })}`
+                : `Valid until ${periodEndDate.toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" })}${isExpiringSoon ? ` · ${daysLeft} day${daysLeft === 1 ? "" : "s"} remaining` : ""}`
+              }
+            </p>
+          )}
         </div>
       ) : (
         <div className="rounded-2xl border border-stroke bg-white p-6 shadow-sm">

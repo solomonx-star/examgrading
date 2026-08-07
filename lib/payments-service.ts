@@ -71,6 +71,8 @@ export type AccessBillingSummary = {
     year: string;
     semester: "First" | "Second" | "Summer";
     accessFee: number;
+    startDate: string;
+    endDate: string;
   } | null;
   hasActiveAccess: boolean;
   pendingPaymentId: string | null;
@@ -105,6 +107,8 @@ export async function getStudentAccessSummary(
       year: period.year,
       semester: period.semester,
       accessFee: periodAccessFee(period),
+      startDate: period.startDate.toISOString(),
+      endDate: period.endDate.toISOString(),
     },
     hasActiveAccess: !!completed,
     pendingPaymentId: pending ? String(pending._id) : null,
