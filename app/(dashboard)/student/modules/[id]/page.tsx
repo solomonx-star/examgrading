@@ -207,14 +207,22 @@ export default async function StudentModulePage({
                 : `${openTests} published · ${mySubmissions} submitted by you`}
             </p>
           </div>
-          {openTests > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {openTests > 0 ? (
+              <Link
+                href={`/student/modules/${id}/tests`}
+                className="inline-flex items-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-dark"
+              >
+                View tests
+              </Link>
+            ) : null}
             <Link
-              href={`/student/modules/${id}/tests`}
-              className="inline-flex items-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-dark"
+              href={`/student/modules/${id}/practice`}
+              className="inline-flex items-center rounded-lg border border-stroke bg-whiter px-4 py-2 text-sm font-semibold text-foreground shadow-sm hover:bg-white"
             >
-              View tests
+              Generate practice test
             </Link>
-          ) : null}
+          </div>
         </div>
       </section>
 
