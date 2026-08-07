@@ -47,8 +47,11 @@ export default async function PracticeSessionPage({
     explanation: session.submittedAt ? q.explanation : null,
   }));
 
-  const submittedAnswers = session.submittedAt
-    ? Object.fromEntries(session.answers as unknown as Map<string, string>)
+  const answersRaw = session.answers as unknown as Record<string, string> | Map<string, string>;
+  const submittedAnswers = session.submittedAt && answersRaw
+    ? answersRaw instanceof Map
+      ? Object.fromEntries(answersRaw)
+      : { ...answersRaw }
     : null;
 
   return (
