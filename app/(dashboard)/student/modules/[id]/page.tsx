@@ -107,6 +107,20 @@ export default async function StudentModulePage({
   const programmeLabel = programme ? ` · ${programme.name}` : "";
   const yearLabel = ` · Year ${mod.yearLevel}`;
 
+  // Pre-compute weighted score contributions for the breakdown table
+  const caWeight = rule?.caWeight ?? 30;
+  const examWeight = rule?.examWeight ?? 70;
+  const testMax = grade?.testMaxScore ?? 100;
+  const examMax = grade?.examMaxScore ?? 100;
+  const testContrib =
+    grade?.testScore != null
+      ? ((grade.testScore / testMax) * caWeight).toFixed(1)
+      : null;
+  const examContrib =
+    grade?.examScore != null
+      ? ((grade.examScore / examMax) * examWeight).toFixed(1)
+      : null;
+
   return (
     <div>
       <AutoRefresh intervalMs={30_000} />
@@ -195,37 +209,45 @@ export default async function StudentModulePage({
             <thead className="text-left text-xs uppercase tracking-wide text-body">
               <tr>
                 <th className="py-2">Component</th>
-                <th className="py-2">Score</th>
-                <th className="py-2 text-right">Weight</th>
+                <th className="py-2">Raw score</th>
+                <th className="py-2">Weight</th>
+                <th className="py-2 text-right">Contribution</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-stroke">
               <tr>
-                <td className="py-2">Test</td>
+                <td className="py-2">Test (CA)</td>
                 <td className="py-2 font-medium text-foreground">
                   {grade.testScore ?? 0} / {grade.testMaxScore ?? 100}
                 </td>
-                <td className="py-2 text-right text-body">
-                  {rule ? `${rule.caWeight}%` : "30%"}
+                <td className="py-2 text-body">{caWeight}%</td>
+                <td className="py-2 text-right font-medium text-foreground">
+                  {testContrib !== null ? `${testContrib} / ${caWeight}` : "—"}
                 </td>
               </tr>
               <tr>
                 <td className="py-2">Exam</td>
                 <td className="py-2 font-medium text-foreground">
-                  {grade.examScore} / {grade.examMaxScore}
+                  {grade.examScore ?? 0} / {grade.examMaxScore ?? 100}
                 </td>
-                <td className="py-2 text-right text-body">
-                  {rule ? `${rule.examWeight}%` : "70%"}
+                <td className="py-2 text-body">{examWeight}%</td>
+                <td className="py-2 text-right font-medium text-foreground">
+                  {examContrib !== null ? `${examContrib} / ${examWeight}` : "—"}
                 </td>
               </tr>
-              <tr>
+              <tr className="border-t-2 border-stroke">
                 <td className="py-2 font-semibold">Total</td>
-                <td className="py-2 font-semibold text-foreground">
-                  {grade.calculatedScore?.toFixed(2) ?? "—"}%
+                <td className="py-2 font-semibold text-foreground" colSpan={2}>
+                  {grade.calculatedScore?.toFixed(1) ?? "—"}%
                 </td>
                 <td className="py-2 text-right font-semibold text-foreground">
                   {grade.calculatedGrade ?? "—"}
-                  {grade.calculatedRemark ? ` · ${grade.calculatedRemark}` : ""}
+                  {grade.calculatedGPA != null
+                    ? ` · GPA ${grade.calculatedGPA.toFixed(1)}`
+                    : ""}
+                  {grade.calculatedRemark
+                    ? ` · ${grade.calculatedRemark}`
+                    : ""}
                 </td>
               </tr>
             </tbody>
