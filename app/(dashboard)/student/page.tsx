@@ -106,6 +106,30 @@ export default async function StudentOverviewPage() {
     });
   }
 
+  type Standing = "deans_list" | "good_standing" | "at_risk" | null;
+  function getStanding(gpa: number | null): Standing {
+    if (gpa === null) return null;
+    if (gpa >= 3.5) return "deans_list";
+    if (gpa >= 2.9) return "good_standing";
+    return "at_risk";
+  }
+
+  const standingConfig = {
+    deans_list: {
+      label: "Dean's List",
+      className: "bg-secondary/10 text-secondary border border-secondary/30",
+    },
+    good_standing: {
+      label: "Good Standing",
+      className: "bg-meta-3/10 text-meta-3 border border-meta-3/30",
+    },
+    at_risk: {
+      label: "At Risk",
+      className: "bg-meta-1/10 text-meta-1 border border-meta-1/30",
+    },
+  } as const;
+
+  const standing = getStanding(cumulative.gpa);
   const yearLabel = me.yearLevel ? ` · Year ${me.yearLevel}` : "";
   const programmeLabel = me.programmeName ? ` · ${me.programmeName}` : "";
 
@@ -116,6 +140,15 @@ export default async function StudentOverviewPage() {
         title={`Welcome, ${me.name}`}
         description={`${me.studentId ?? ""}${programmeLabel}${yearLabel}`}
       />
+      {standing && (
+        <div className="-mt-3 mb-4">
+          <span
+            className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${standingConfig[standing].className}`}
+          >
+            {standingConfig[standing].label}
+          </span>
+        </div>
+      )}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Enrolled modules" value={modules.length} />
         <StatCard
