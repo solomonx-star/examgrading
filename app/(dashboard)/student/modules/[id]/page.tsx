@@ -11,8 +11,10 @@ import { TestSubmission } from "@/models/TestSubmission";
 import { User } from "@/models/User";
 import { requireActiveStudentAccess } from "@/lib/student-scope";
 import { getEffectiveGradingRule } from "@/lib/grading-server";
+import { getTodaySessionAction } from "@/lib/actions/tutor";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { AutoRefresh } from "@/components/ui/AutoRefresh";
+import { TutorChat } from "./tutor-chat";
 
 export const dynamic = "force-dynamic";
 
@@ -65,7 +67,7 @@ export default async function StudentModulePage({
       ? ownProgrammeOid
       : (modProgrammeIds[0] ?? null);
 
-  const [lecturer, programme, attendance, grade, rule, openTests, mySubmissions] = await Promise.all([
+  const [lecturer, programme, attendance, grade, rule, openTests, mySubmissions, tutorData] = await Promise.all([
     mod.lecturerId
       ? User.findById(mod.lecturerId).select("name email").lean()
       : Promise.resolve(null),
@@ -94,6 +96,7 @@ export default async function StudentModulePage({
       studentId: meOid,
       status: "submitted",
     }),
+    getTodaySessionAction(id),
   ]);
 
   const total = attendance.length;
@@ -289,6 +292,18 @@ export default async function StudentModulePage({
           </tbody>
         </table>
       </section>
+
+      <div className="mt-6">
+        <TutorChat
+          courseId={id}
+          moduleCode={mod.code}
+          moduleName={mod.name}
+          programmeName={programme?.name ?? ""}
+          yearLevel={mod.yearLevel ?? 1}
+          initialSession={tutorData.session}
+          initialBalance={tutorData.balance ?? 0}
+        />
+      </div>
 
       <Link
         href="/student/modules"

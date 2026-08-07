@@ -56,3 +56,6 @@ export type {
   IAICreditTransaction,
   AICreditReason,
 } from "./AICreditTransaction";
+
+export { TutorSession } from "./TutorSession";
+export type { ITutorSession, ITutorMessage } from "./TutorSession";
