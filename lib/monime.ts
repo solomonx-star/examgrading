@@ -19,7 +19,6 @@ function authHeaders(idempotencyKey?: string): HeadersInit {
     Authorization: `Bearer ${process.env.MONIME_API_KEY}`,
     "Content-Type": "application/json",
     "Monime-Space-Id": process.env.MONIME_SPACE_ID,
-    "Monime-Version": "caph.2025-08-23",
   };
   if (idempotencyKey) headers["Idempotency-Key"] = idempotencyKey;
   return headers;
@@ -54,7 +53,9 @@ export async function createCheckoutSession(
   input: CreateCheckoutInput,
 ): Promise<CheckoutSession> {
   const idempotencyKey = `checkout-${input.reference}`;
-  const res = await fetch(`${BASE_URL}/v1/checkout-sessions`, {
+  const url = `${BASE_URL}/v1/checkout-sessions`;
+  console.log("[monime] POST", url, "space:", process.env.MONIME_SPACE_ID?.slice(0, 8));
+  const res = await fetch(url, {
     method: "POST",
     headers: authHeaders(idempotencyKey),
     body: JSON.stringify({
@@ -62,6 +63,7 @@ export async function createCheckoutSession(
       ...(input.description && { description: input.description }),
       lineItems: [
         {
+          type: "custom",
           name: input.name,
           price: {
             value: input.priceInMinorUnits,
