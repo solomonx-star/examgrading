@@ -127,45 +127,54 @@ export function verifyWebhookSignature(
   rawBody: string,
   headers: Headers,
 ): boolean {
-  const secret = process.env.MONIME_WEBHOOK_SECRET;
+  const secret = process.env.MONIME_WEBHOOK_SECRET?.trim();
   if (!secret) return false;
 
-  const signature =
+  const sigHeader =
+    headers.get("monime-signature") ||
     headers.get("x-monime-signature") ||
     headers.get("x-webhook-signature") ||
-    headers.get("monime-signature") ||
     "";
-  if (!signature) return false;
+  if (!sigHeader) return false;
 
-  const trimmedSecret = secret.trim();
-  const expectedHex = crypto
-    .createHmac("sha256", trimmedSecret)
-    .update(rawBody)
-    .digest("hex");
-  const expectedBase64 = crypto
-    .createHmac("sha256", trimmedSecret)
-    .update(rawBody)
-    .digest("base64");
+  // Monime uses Stripe-style format: "t=TIMESTAMP,v1=BASE64_HMAC"
+  // The signed payload is: "<timestamp>.<rawBody>"
+  const tMatch = sigHeader.match(/t=(\d+)/);
+  const v1Match = sigHeader.match(/v1=([^,\s]+)/);
 
-  // Monime may send hex (with or without sha256= prefix) or base64.
-  const raw = signature.replace(/^sha256=/, "").trim();
+  if (tMatch && v1Match) {
+    const timestamp = tMatch[1];
+    const receivedSig = v1Match[1];
+    const signedPayload = `${timestamp}.${rawBody}`;
 
-  const tryCompare = (received: Buffer, expected: Buffer) => {
+    const expected = crypto
+      .createHmac("sha256", secret)
+      .update(signedPayload)
+      .digest("base64");
+
     try {
-      return received.length === expected.length &&
-        crypto.timingSafeEqual(received, expected);
-    } catch {
-      return false;
-    }
-  };
+      const a = Buffer.from(receivedSig, "base64");
+      const b = Buffer.from(expected, "base64");
+      if (a.length === b.length && crypto.timingSafeEqual(a, b)) return true;
+    } catch { /* fall through */ }
+  }
 
-  // Try hex
-  const sigBufHex = Buffer.from(raw, "hex");
-  if (sigBufHex.length > 0 && tryCompare(sigBufHex, Buffer.from(expectedHex, "hex"))) return true;
+  // Fallback: plain signature without timestamp (older format)
+  const plain = sigHeader.replace(/^sha256=/, "").trim();
+  const expectedHex = crypto.createHmac("sha256", secret).update(rawBody).digest("hex");
+  const expectedB64 = crypto.createHmac("sha256", secret).update(rawBody).digest("base64");
 
-  // Try base64
-  const sigBufB64 = Buffer.from(raw, "base64");
-  if (sigBufB64.length > 0 && tryCompare(sigBufB64, Buffer.from(expectedBase64, "base64"))) return true;
+  try {
+    const a = Buffer.from(plain, "hex");
+    const b = Buffer.from(expectedHex, "hex");
+    if (a.length > 0 && a.length === b.length && crypto.timingSafeEqual(a, b)) return true;
+  } catch { /* fall through */ }
+
+  try {
+    const a = Buffer.from(plain, "base64");
+    const b = Buffer.from(expectedB64, "base64");
+    if (a.length > 0 && a.length === b.length && crypto.timingSafeEqual(a, b)) return true;
+  } catch { /* fall through */ }
 
   return false;
 }
