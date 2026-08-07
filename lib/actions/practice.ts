@@ -162,10 +162,22 @@ const submitSchema = z.object({
   answers: z.record(z.string(), z.string()),
 });
 
+export type SubmittedQuestion = {
+  id: string;
+  correctId: string;
+  explanation: string;
+};
+
 export async function submitPracticeTestAction(args: {
   sessionId: string;
   answers: Record<string, string>;
-}): Promise<{ ok: boolean; error?: string; score?: number; maxScore?: number }> {
+}): Promise<{
+  ok: boolean;
+  error?: string;
+  score?: number;
+  maxScore?: number;
+  questions?: SubmittedQuestion[];
+}> {
   const me = await requireActiveStudentAccess();
 
   const parsed = submitSchema.safeParse(args);
@@ -191,5 +203,14 @@ export async function submitPracticeTestAction(args: {
   session.submittedAt = new Date();
   await session.save();
 
-  return { ok: true, score, maxScore: session.maxScore };
+  return {
+    ok: true,
+    score,
+    maxScore: session.maxScore,
+    questions: session.questions.map((q) => ({
+      id: q.id,
+      correctId: q.correctId,
+      explanation: q.explanation,
+    })),
+  };
 }

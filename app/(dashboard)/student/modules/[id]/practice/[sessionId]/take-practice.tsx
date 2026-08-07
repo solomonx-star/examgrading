@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { submitPracticeTestAction } from "@/lib/actions/practice";
+import type { SubmittedQuestion } from "@/lib/actions/practice";
 
 type Option = { id: string; text: string };
 type Question = {
@@ -39,6 +40,18 @@ export function TakePractice({
   const [submitted, setSubmitted] = useState(alreadySubmitted);
   const [score, setScore] = useState<number | null>(initialScore);
   const [pending, startSubmit] = useTransition();
+  // Populated after submission so correctId/explanation are available client-side
+  const [revealedAnswers, setRevealedAnswers] = useState<
+    Record<string, SubmittedQuestion>
+  >(
+    questions.reduce(
+      (acc, q) => {
+        if (q.correctId) acc[q.id] = { id: q.id, correctId: q.correctId, explanation: q.explanation ?? "" };
+        return acc;
+      },
+      {} as Record<string, SubmittedQuestion>,
+    ),
+  );
 
   function select(qid: string, oid: string) {
     if (submitted) return;
@@ -59,6 +72,14 @@ export function TakePractice({
         answers,
       });
       if (res.ok) {
+        if (res.questions) {
+          setRevealedAnswers(
+            res.questions.reduce(
+              (acc, q) => { acc[q.id] = q; return acc; },
+              {} as Record<string, SubmittedQuestion>,
+            ),
+          );
+        }
         setScore(res.score ?? 0);
         setSubmitted(true);
         toast.success(
@@ -91,8 +112,11 @@ export function TakePractice({
 
       {questions.map((q, idx) => {
         const selected = answers[q.id] ?? null;
-        const isCorrect = submitted && selected === q.correctId;
-        const isWrong = submitted && selected !== null && selected !== q.correctId;
+        const revealed = revealedAnswers[q.id];
+        const correctId = revealed?.correctId ?? null;
+        const explanation = revealed?.explanation ?? null;
+        const isCorrect = submitted && selected !== null && selected === correctId;
+        const isWrong = submitted && selected !== null && selected !== correctId;
 
         return (
           <div
@@ -117,9 +141,9 @@ export function TakePractice({
             <div className="space-y-2">
               {q.options.map((opt) => {
                 const isSelected = selected === opt.id;
-                const isAnswer = submitted && q.correctId === opt.id;
+                const isAnswer = submitted && correctId === opt.id;
                 const isWrongChoice =
-                  submitted && isSelected && opt.id !== q.correctId;
+                  submitted && isSelected && opt.id !== correctId;
 
                 let cls =
                   "flex cursor-pointer items-start gap-3 rounded-xl border p-3 text-sm transition-colors";
@@ -160,10 +184,10 @@ export function TakePractice({
               })}
             </div>
 
-            {submitted && q.explanation ? (
+            {submitted && explanation ? (
               <p className="mt-3 rounded-lg bg-whiter px-3 py-2 text-xs text-body">
                 <strong className="text-foreground">Explanation:</strong>{" "}
-                {q.explanation}
+                {explanation}
               </p>
             ) : null}
           </div>
