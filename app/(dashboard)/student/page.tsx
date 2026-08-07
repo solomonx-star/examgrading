@@ -1,7 +1,9 @@
 import Link from "next/link";
+import mongoose from "mongoose";
 import { connectDB } from "@/lib/db";
 import { AcademicPeriod } from "@/models/AcademicPeriod";
 import { GradingRule } from "@/models/GradingRule";
+import { Test } from "@/models/Test";
 import { requireActiveStudentAccess } from "@/lib/student-scope";
 import {
   averageGPA,
@@ -26,6 +28,26 @@ export default async function StudentOverviewPage() {
     GradingRule.findOne({ courseId: null }).select("attendanceThreshold").lean(),
   ]);
 
+  const currentModuleIds = (current
+    ? modules.filter(
+        (m) => m.academicYear === current.year && m.semester === current.semester,
+      )
+    : modules
+  ).map((m) => m.id);
+
+  const now = new Date();
+  const upcomingTests = currentModuleIds.length > 0
+    ? await Test.find({
+        courseId: { $in: currentModuleIds.map((id) => new mongoose.Types.ObjectId(id)) },
+        isPublished: true,
+        endsAt: { $gte: now },
+      })
+        .select("title courseId startsAt endsAt durationMinutes")
+        .sort({ startsAt: 1 })
+        .limit(5)
+        .lean()
+    : [];
+
   const moduleById = new Map(modules.map((m) => [m.id, m]));
   const gradeRows = grades
     .map((g) => {
@@ -49,8 +71,7 @@ export default async function StudentOverviewPage() {
 
   const currentModules = current
     ? modules.filter(
-        (m) =>
-          m.academicYear === current.year && m.semester === current.semester,
+        (m) => m.academicYear === current.year && m.semester === current.semester,
       )
     : modules;
 
@@ -74,6 +95,16 @@ export default async function StudentOverviewPage() {
     const s = attStats.get(m.id);
     return s && s.total > 0 && s.pct !== null && s.pct < attendanceThreshold;
   });
+
+  function formatTestTime(d: Date): string {
+    return new Date(d).toLocaleString("en-GB", {
+      weekday: "short",
+      day: "2-digit",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }
 
   const yearLabel = me.yearLevel ? ` · Year ${me.yearLevel}` : "";
   const programmeLabel = me.programmeName ? ` · ${me.programmeName}` : "";
@@ -124,6 +155,45 @@ export default async function StudentOverviewPage() {
                   >
                     {s.pct}%
                   </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+
+      {upcomingTests.length > 0 && (
+        <div className="mt-6 rounded-2xl border border-stroke bg-white p-5 shadow-sm">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-foreground">
+              Upcoming tests
+            </h2>
+            <Link
+              href="/student/tests"
+              className="text-xs font-medium text-primary hover:underline"
+            >
+              View all →
+            </Link>
+          </div>
+          <ul className="divide-y divide-stroke text-sm">
+            {upcomingTests.map((t) => {
+              const mod = moduleById.get(String(t.courseId));
+              const isLive = new Date(t.startsAt) <= now;
+              return (
+                <li key={String(t._id)} className="flex items-start justify-between gap-4 py-2">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-foreground">{t.title}</p>
+                    <p className="text-xs text-body">
+                      {mod ? `${mod.code} · ` : ""}
+                      {isLive ? "Ends" : "Starts"} {formatTestTime(isLive ? t.endsAt : t.startsAt)}
+                      {" · "}{t.durationMinutes} min
+                    </p>
+                  </div>
+                  {isLive && (
+                    <span className="shrink-0 rounded-full bg-meta-3/10 px-2 py-0.5 text-xs font-semibold text-meta-3">
+                      Live
+                    </span>
+                  )}
                 </li>
               );
             })}
