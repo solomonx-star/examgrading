@@ -66,7 +66,7 @@ export default async function StudentModulePage({
       ? ownProgrammeOid
       : (modProgrammeIds[0] ?? null);
 
-  const [lecturer, programme, attendance, grade, rule, openTests, mySubmissions, moduleAnnouncements] = await Promise.all([
+  const [lecturer, programme, attendance, grade, rule, openTests, mySubmissions, moduleAnnouncements, classAvgData] = await Promise.all([
     mod.lecturerId
       ? User.findById(mod.lecturerId).select("name email").lean()
       : Promise.resolve(null),
@@ -99,7 +99,20 @@ export default async function StudentModulePage({
       .sort({ isPinned: -1, createdAt: -1 })
       .limit(10)
       .lean(),
+    Grade.aggregate<{ avgScore: number; avgGPA: number; count: number }>([
+      { $match: { courseId: mod._id, isPublished: true } },
+      {
+        $group: {
+          _id: null,
+          avgScore: { $avg: "$calculatedScore" },
+          avgGPA: { $avg: "$calculatedGPA" },
+          count: { $sum: 1 },
+        },
+      },
+    ]),
   ]);
+
+  const classAvg = classAvgData[0] ?? null;
 
   const total = attendance.length;
   const present = attendance.filter((a) => a.status === "present").length;
@@ -291,6 +304,17 @@ export default async function StudentModulePage({
               {rule ? ` ${rule.attendanceThreshold}%` : " required threshold"}).
             </p>
           ) : null}
+          {classAvg && classAvg.count >= 2 && (
+            <div className="mt-4 rounded-xl bg-whiter px-4 py-3 text-xs text-body">
+              <span className="font-medium text-foreground">Class average</span>
+              {" — "}
+              {classAvg.avgScore !== null
+                ? `${classAvg.avgScore.toFixed(1)}% · GPA ${classAvg.avgGPA?.toFixed(2) ?? "—"}`
+                : "—"}
+              {" "}
+              <span className="text-[10px]">({classAvg.count} students graded, anonymous)</span>
+            </div>
+          )}
         </section>
       ) : null}
 
