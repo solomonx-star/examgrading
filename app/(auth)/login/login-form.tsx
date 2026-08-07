@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { toast } from "sonner";
+import { Eye, EyeOff } from "lucide-react";
 import { loginAction, type LoginState } from "./actions";
 import { trackEvent, GA_EVENTS } from "@/lib/analytics";
 
@@ -24,6 +25,7 @@ export function LoginForm({ callbackUrl }: { callbackUrl: string }) {
     loginAction,
     undefined,
   );
+  const [showPassword, setShowPassword] = useState(false);
   // Login success redirects, so we only need to surface errors here.
   useEffect(() => {
     if (state?.error) {
@@ -69,16 +71,27 @@ export function LoginForm({ callbackUrl }: { callbackUrl: string }) {
         >
           Password
         </label>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          required
-          minLength={8}
-          className="block w-full rounded-lg border border-stroke bg-white px-3 py-2.5 text-sm text-foreground placeholder-body shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-          placeholder="••••••••"
-        />
+        <div className="relative">
+          <input
+            id="password"
+            name="password"
+            type={showPassword ? "text" : "password"}
+            autoComplete="current-password"
+            required
+            minLength={8}
+            className="block w-full rounded-lg border border-stroke bg-white px-3 py-2.5 pr-10 text-sm text-foreground placeholder-body shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            placeholder="••••••••"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((v) => !v)}
+            className="absolute inset-y-0 right-0 flex items-center px-3 text-body hover:text-foreground"
+            tabIndex={-1}
+            aria-label={showPassword ? "Hide password" : "Show password"}
+          >
+            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+          </button>
+        </div>
       </div>
 
       {state?.error ? (

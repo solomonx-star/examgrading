@@ -13,6 +13,7 @@ declare module "lucide-react" {
   export const BookOpen: LucideIcon;
   export const UserCog: LucideIcon;
   export const Eye: LucideIcon;
+  export const EyeOff: LucideIcon;
   export const Activity: LucideIcon;
   export const AlertCircle: LucideIcon;
   export const MousePointer2: LucideIcon;
