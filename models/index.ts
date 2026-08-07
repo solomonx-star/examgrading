@@ -62,3 +62,6 @@ export type { IAnnouncement } from "./Announcement";
 
 export { PracticeSession } from "./PracticeSession";
 export type { IPracticeSession, IPracticeQuestion } from "./PracticeSession";
+
+export { PerformanceReport } from "./PerformanceReport";
+export type { IPerformanceReport } from "./PerformanceReport";

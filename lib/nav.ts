@@ -40,6 +40,7 @@ export const ROLE_NAV: Record<UserRole, NavItem[]> = {
     { href: "/student/calculator", label: "Calculator", icon: "scale" },
     { href: "/student/timeline", label: "Timeline", icon: "calendar" },
     { href: "/student/credits", label: "AI Credits", icon: "chart" },
+    { href: "/student/ai/report", label: "Performance Coach", icon: "chart" },
     { href: "/student/access", label: "Pay access", icon: "scale" },
   ],
 };
