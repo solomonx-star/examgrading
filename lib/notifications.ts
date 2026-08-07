@@ -8,6 +8,7 @@
 import mongoose from "mongoose";
 import nodemailer from "nodemailer";
 import { connectDB } from "@/lib/db";
+import { appUrl } from "@/lib/app-url";
 import { User } from "@/models/User";
 import {
   Notification,
@@ -54,8 +55,8 @@ const emailTransport: Transport = async (ctx) => {
   const user = await User.findById(ctx.payload.userId).select("email name").lean();
   if (!user?.email) return;
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  const link = ctx.payload.link ? `${appUrl}${ctx.payload.link}` : appUrl;
+  const baseUrl = appUrl();
+  const link = ctx.payload.link ? `${baseUrl}${ctx.payload.link}` : baseUrl;
 
   await mailer.transporter.sendMail({
     from: mailer.from,

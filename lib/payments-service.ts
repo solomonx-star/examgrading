@@ -20,10 +20,7 @@ import {
   type MonimeWebhookEvent,
 } from "@/lib/monime";
 import { notify } from "@/lib/notifications";
-
-function appUrl(): string {
-  return process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-}
+import { appUrl } from "@/lib/app-url";
 
 function slugify(s: string): string {
   return s
