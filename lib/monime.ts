@@ -134,8 +134,10 @@ export function verifyWebhookSignature(
 }
 
 export type MonimeWebhookEvent = {
-  type: string;
+  event?: { name?: string };
+  object?: { id?: string };
   data?: {
+    id?: string;
     metadata?: Record<string, string>;
     [k: string]: unknown;
   };

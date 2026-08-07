@@ -246,7 +246,7 @@ export async function verifyAndActivateAccess(
 
 // ─── Webhook (Monime → backend, async, idempotent) ─────────────────────────
 export async function handleAccessWebhookEvent(event: MonimeWebhookEvent) {
-  if (event?.type !== "checkout_session.completed") return;
+  if (event?.event?.name !== "checkout_session.completed") return;
   const accessPaymentId = event?.data?.metadata?.accessPaymentId;
   if (!accessPaymentId || typeof accessPaymentId !== "string") return;
   await activateAccess(accessPaymentId, null);

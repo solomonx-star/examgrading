@@ -32,27 +32,15 @@ export async function createCreditsCheckout(args: {
 
   await connectDB();
 
-  // Reuse an existing pending checkout for the same package to avoid orphaned sessions.
-  const existing = await CreditPurchase.findOne({
-    student: args.studentId,
+  const purchase = await CreditPurchase.create({
+    student: new mongoose.Types.ObjectId(args.studentId),
     credits: pkg.credits,
+    amount: pkg.priceInMinorUnits,
+    checkoutSessionId: "pending",
     status: "pending",
   });
 
-  let purchase = existing;
-  let checkoutUrl = "";
-
-  if (!existing) {
-    purchase = await CreditPurchase.create({
-      student: new mongoose.Types.ObjectId(args.studentId),
-      credits: pkg.credits,
-      amount: pkg.priceInMinorUnits,
-      checkoutSessionId: "pending",
-      status: "pending",
-    });
-  }
-
-  const reference = `credits-${purchase!._id}`;
+  const reference = `credits-${purchase._id}`;
   const session = await createCheckoutSession({
     name: `AI Credits — ${pkg.label} Pack (${pkg.credits} credits)`,
     description: `${pkg.credits} AI credits for exam management portal`,
@@ -63,17 +51,16 @@ export async function createCreditsCheckout(args: {
     metadata: {
       type: "credits",
       studentId: args.studentId,
-      purchaseId: String(purchase!._id),
+      purchaseId: String(purchase._id),
       credits: String(pkg.credits),
     },
   });
 
-  await CreditPurchase.findByIdAndUpdate(purchase!._id, {
+  await CreditPurchase.findByIdAndUpdate(purchase._id, {
     checkoutSessionId: session.id,
   });
 
-  checkoutUrl = session.redirectUrl;
-  return { checkoutUrl, sessionId: session.id, credits: pkg.credits, amount: pkg.priceInMinorUnits };
+  return { checkoutUrl: session.redirectUrl, sessionId: session.id, credits: pkg.credits, amount: pkg.priceInMinorUnits };
 }
 
 export async function verifyAndCreditPurchase(
@@ -128,11 +115,14 @@ export async function verifyAndCreditPurchase(
 }
 
 export async function handleCreditsWebhookEvent(event: MonimeWebhookEvent) {
-  const type = event?.type;
+  const type = event?.event?.name;
   if (!type) return;
 
   const purchaseId = event?.data?.metadata?.purchaseId;
   if (!purchaseId || typeof purchaseId !== "string") return;
+
+  // The session ID this webhook is about (from the envelope).
+  const webhookSessionId = event?.object?.id ?? (event?.data?.id as string | undefined);
 
   await connectDB();
   const purchase = await CreditPurchase.findById(purchaseId);
@@ -144,8 +134,14 @@ export async function handleCreditsWebhookEvent(event: MonimeWebhookEvent) {
   }
 
   if (type === "checkout_session.expired" || type === "checkout_session.cancelled") {
+    // Only fail if this webhook is for the session we currently have on record —
+    // guards against stale webhooks from a previous session for the same purchase.
     await CreditPurchase.findOneAndUpdate(
-      { _id: purchase._id, status: "pending" },
+      {
+        _id: purchase._id,
+        status: "pending",
+        ...(webhookSessionId ? { checkoutSessionId: webhookSessionId } : {}),
+      },
       { status: "failed" },
     );
   }
