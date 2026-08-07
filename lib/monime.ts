@@ -75,8 +75,16 @@ export async function createCheckoutSession(
       metadata: input.metadata,
     }),
   });
-  const data = (await res.json()) as MonimeEnvelope<CheckoutSession>;
+  const rawText = await res.text();
+  let data: MonimeEnvelope<CheckoutSession>;
+  try {
+    data = JSON.parse(rawText) as MonimeEnvelope<CheckoutSession>;
+  } catch {
+    console.error("[monime] createCheckoutSession non-JSON response", res.status, rawText.slice(0, 500));
+    throw new Error(`Monime returned a non-JSON response (HTTP ${res.status})`);
+  }
   if (!data.success || !data.result) {
+    console.error("[monime] createCheckoutSession error response", res.status, rawText.slice(0, 500));
     throw new Error(
       data.error?.message || "Failed to create Monime checkout session",
     );
@@ -90,8 +98,16 @@ export async function getCheckoutSession(
   const res = await fetch(`${BASE_URL}/v1/checkout-sessions/${sessionId}`, {
     headers: authHeaders(),
   });
-  const data = (await res.json()) as MonimeEnvelope<CheckoutSession>;
+  const rawText = await res.text();
+  let data: MonimeEnvelope<CheckoutSession>;
+  try {
+    data = JSON.parse(rawText) as MonimeEnvelope<CheckoutSession>;
+  } catch {
+    console.error("[monime] getCheckoutSession non-JSON response", res.status, rawText.slice(0, 500));
+    throw new Error(`Monime returned a non-JSON response (HTTP ${res.status})`);
+  }
   if (!data.success || !data.result) {
+    console.error("[monime] getCheckoutSession error response", res.status, rawText.slice(0, 500));
     throw new Error(data.error?.message || "Monime session not found");
   }
   return data.result;
