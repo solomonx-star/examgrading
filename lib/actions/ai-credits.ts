@@ -82,6 +82,8 @@ export async function addCreditsAction(args: {
     });
 
     revalidatePath(`/admin/students/${parsed.data.studentId}`);
+    revalidatePath(`/superadmin/ai-credits/${parsed.data.studentId}`);
+    revalidatePath("/superadmin/ai-credits");
     revalidatePath("/student/credits");
     revalidatePath("/student/access");
 

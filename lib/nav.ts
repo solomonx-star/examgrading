@@ -10,6 +10,7 @@ export const ROLE_NAV: Record<UserRole, NavItem[]> = {
   superadmin: [
     { href: "/superadmin", label: "Overview", icon: "home" },
     { href: "/superadmin/admins", label: "Admins", icon: "users" },
+    { href: "/superadmin/ai-credits", label: "AI Credits", icon: "chart" },
     { href: "/superadmin/grading-rules", label: "Grading rules", icon: "scale" },
     { href: "/superadmin/academic-periods", label: "Academic periods", icon: "calendar" },
     { href: "/superadmin/access-payments", label: "Access payments", icon: "clipboard" },

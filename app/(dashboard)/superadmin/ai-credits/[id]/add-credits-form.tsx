@@ -46,7 +46,7 @@ export function AddCreditsForm({
     undefined,
   );
   useToastFromState(state, {
-    successMessage: (state?.ok && state.message) ? state.message : "Credits added.",
+    successMessage: state?.ok && state.message ? state.message : "Credits added.",
   });
 
   return (
@@ -111,7 +111,7 @@ export function AddCreditsForm({
             role="status"
             className="rounded-lg border border-meta-3/30 bg-meta-3/10 px-3 py-2 text-sm text-meta-3"
           >
-            {(state.ok && state.message) ? state.message : "Credits added."}
+            {state.ok && state.message ? state.message : "Credits added."}
           </div>
         ) : null}
 
