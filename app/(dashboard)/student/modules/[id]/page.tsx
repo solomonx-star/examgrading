@@ -217,10 +217,16 @@ export default async function StudentModulePage({
               </Link>
             ) : null}
             <Link
+              href={`/student/modules/${id}/tutor`}
+              className="inline-flex items-center rounded-lg bg-primary/10 px-4 py-2 text-sm font-semibold text-primary shadow-sm hover:bg-primary/20"
+            >
+              AI Tutor
+            </Link>
+            <Link
               href={`/student/modules/${id}/practice`}
               className="inline-flex items-center rounded-lg border border-stroke bg-whiter px-4 py-2 text-sm font-semibold text-foreground shadow-sm hover:bg-white"
             >
-              Generate practice test
+              Practice test
             </Link>
           </div>
         </div>
