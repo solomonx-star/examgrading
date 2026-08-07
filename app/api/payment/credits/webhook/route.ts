@@ -24,6 +24,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Missing signature" }, { status: 400 });
   }
 
+  // Debug: log all headers and the raw signature so we can fix the verification
+  const allHeaders = Object.fromEntries(req.headers.entries());
+  const sigHeader =
+    req.headers.get("x-monime-signature") ||
+    req.headers.get("x-webhook-signature") ||
+    req.headers.get("monime-signature") ||
+    "(none found)";
+  console.log("[credits webhook] headers:", JSON.stringify(allHeaders));
+  console.log("[credits webhook] signature header value:", sigHeader);
+  console.log("[credits webhook] body length:", rawBody.length, "body preview:", rawBody.slice(0, 100));
+
   if (!verifyWebhookSignature(rawBody, req.headers)) {
     console.warn("[credits webhook] Invalid signature. MONIME_WEBHOOK_SECRET set:", !!process.env.MONIME_WEBHOOK_SECRET);
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
