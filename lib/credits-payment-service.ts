@@ -131,7 +131,9 @@ export async function verifyAndCreditPurchase(
 }
 
 export async function handleCreditsWebhookEvent(event: MonimeWebhookEvent) {
-  if (event?.type !== "checkout_session.completed") return;
+  const type = event?.type;
+  if (!type) return;
+
   const purchaseId = event?.data?.metadata?.purchaseId;
   if (!purchaseId || typeof purchaseId !== "string") return;
 
@@ -139,5 +141,15 @@ export async function handleCreditsWebhookEvent(event: MonimeWebhookEvent) {
   const purchase = await CreditPurchase.findById(purchaseId);
   if (!purchase) return;
 
-  await verifyAndCreditPurchase(purchase.checkoutSessionId);
+  if (type === "checkout_session.completed") {
+    await verifyAndCreditPurchase(purchase.checkoutSessionId);
+    return;
+  }
+
+  if (type === "checkout_session.expired" || type === "checkout_session.cancelled") {
+    await CreditPurchase.findOneAndUpdate(
+      { _id: purchase._id, status: "pending" },
+      { status: "failed" },
+    );
+  }
 }
