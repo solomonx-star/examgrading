@@ -47,3 +47,12 @@ export type {
   ITestSubmissionAnswer,
   TestSubmissionStatus,
 } from "./TestSubmission";
+
+export { AICredit } from "./AICredit";
+export type { IAICredit } from "./AICredit";
+
+export { AICreditTransaction } from "./AICreditTransaction";
+export type {
+  IAICreditTransaction,
+  AICreditReason,
+} from "./AICreditTransaction";
