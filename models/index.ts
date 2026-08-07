@@ -59,3 +59,6 @@ export type {
 
 export { Announcement } from "./Announcement";
 export type { IAnnouncement } from "./Announcement";
+
+export { PracticeSession } from "./PracticeSession";
+export type { IPracticeSession, IPracticeQuestion } from "./PracticeSession";
