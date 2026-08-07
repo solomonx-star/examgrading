@@ -4,10 +4,12 @@ import { User } from "@/models/User";
 import { Programme } from "@/models/Programme";
 import { Attendance } from "@/models/Attendance";
 import { Grade } from "@/models/Grade";
+import { Announcement } from "@/models/Announcement";
 import { requireLecturerCourse } from "@/lib/lecturer-course";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { AutoRefresh } from "@/components/ui/AutoRefresh";
 import { StatCard } from "@/components/ui/StatCard";
+import { AnnouncementPanel } from "./announcement-panel";
 
 function joinProgrammes(
   programmeIds: { toString(): string }[],
@@ -32,7 +34,7 @@ export default async function LecturerCoursePage({
   const { course: mod } = await requireLecturerCourse(id);
 
   await connectDB();
-  const [enrolled, attendanceCount, gradeStats, programmes] = await Promise.all([
+  const [enrolled, attendanceCount, gradeStats, programmes, announcements] = await Promise.all([
     User.countDocuments({
       _id: { $in: mod.enrolledStudents },
       isActive: true,
@@ -58,6 +60,10 @@ export default async function LecturerCoursePage({
     ]),
     Programme.find({ _id: { $in: mod.programmeIds ?? [] } })
       .select("name code")
+      .lean(),
+    Announcement.find({ courseId: mod._id })
+      .sort({ isPinned: -1, createdAt: -1 })
+      .limit(20)
       .lean(),
   ]);
 
@@ -153,6 +159,19 @@ export default async function LecturerCoursePage({
             current entries — useful for HoD review before submission.
           </p>
         </Link>
+      </div>
+
+      <div className="mt-6">
+        <AnnouncementPanel
+          courseId={id}
+          announcements={announcements.map((a) => ({
+            id: String(a._id),
+            title: a.title,
+            body: a.body,
+            isPinned: a.isPinned,
+            createdAt: a.createdAt.toISOString(),
+          }))}
+        />
       </div>
     </div>
   );

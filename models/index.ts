@@ -56,3 +56,6 @@ export type {
   IAICreditTransaction,
   AICreditReason,
 } from "./AICreditTransaction";
+
+export { Announcement } from "./Announcement";
+export type { IAnnouncement } from "./Announcement";
