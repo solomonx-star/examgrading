@@ -9,6 +9,7 @@ import { Grade } from "@/models/Grade";
 import { Test } from "@/models/Test";
 import { TestSubmission } from "@/models/TestSubmission";
 import { User } from "@/models/User";
+import { Announcement } from "@/models/Announcement";
 import { requireActiveStudentAccess } from "@/lib/student-scope";
 import { getEffectiveGradingRule } from "@/lib/grading-server";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -65,7 +66,7 @@ export default async function StudentModulePage({
       ? ownProgrammeOid
       : (modProgrammeIds[0] ?? null);
 
-  const [lecturer, programme, attendance, grade, rule, openTests, mySubmissions] = await Promise.all([
+  const [lecturer, programme, attendance, grade, rule, openTests, mySubmissions, moduleAnnouncements] = await Promise.all([
     mod.lecturerId
       ? User.findById(mod.lecturerId).select("name email").lean()
       : Promise.resolve(null),
@@ -94,6 +95,10 @@ export default async function StudentModulePage({
       studentId: meOid,
       status: "submitted",
     }),
+    Announcement.find({ courseId: mod._id })
+      .sort({ isPinned: -1, createdAt: -1 })
+      .limit(10)
+      .lean(),
   ]);
 
   const total = attendance.length;
@@ -185,6 +190,34 @@ export default async function StudentModulePage({
           ) : null}
         </div>
       </section>
+
+      {moduleAnnouncements.length > 0 && (
+        <section className="mb-6 rounded-2xl border border-stroke bg-white shadow-sm">
+          <div className="border-b border-stroke px-5 py-3">
+            <h2 className="text-sm font-semibold text-foreground">Announcements</h2>
+          </div>
+          <ul className="divide-y divide-stroke">
+            {moduleAnnouncements.map((ann) => (
+              <li key={String(ann._id)} className="px-5 py-4">
+                <div className="flex items-center gap-2">
+                  {ann.isPinned && (
+                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                      Pinned
+                    </span>
+                  )}
+                  <p className="text-sm font-semibold text-foreground">{ann.title}</p>
+                </div>
+                <p className="mt-1 whitespace-pre-wrap text-sm text-body">{ann.body}</p>
+                <p className="mt-1 text-xs text-body">
+                  {new Date(ann.createdAt).toLocaleDateString("en-GB", {
+                    weekday: "short", day: "2-digit", month: "short", year: "numeric",
+                  })}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {grade ? (
         <section className="mb-6 rounded-2xl border border-stroke bg-white p-5 shadow-sm">
