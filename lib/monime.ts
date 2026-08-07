@@ -137,19 +137,37 @@ export function verifyWebhookSignature(
     "";
   if (!signature) return false;
 
-  const expected = crypto
-    .createHmac("sha256", secret)
+  const trimmedSecret = secret.trim();
+  const expectedHex = crypto
+    .createHmac("sha256", trimmedSecret)
     .update(rawBody)
     .digest("hex");
+  const expectedBase64 = crypto
+    .createHmac("sha256", trimmedSecret)
+    .update(rawBody)
+    .digest("base64");
 
-  try {
-    return crypto.timingSafeEqual(
-      Buffer.from(signature.replace(/^sha256=/, ""), "hex"),
-      Buffer.from(expected, "hex"),
-    );
-  } catch {
-    return false;
-  }
+  // Monime may send hex (with or without sha256= prefix) or base64.
+  const raw = signature.replace(/^sha256=/, "").trim();
+
+  const tryCompare = (received: Buffer, expected: Buffer) => {
+    try {
+      return received.length === expected.length &&
+        crypto.timingSafeEqual(received, expected);
+    } catch {
+      return false;
+    }
+  };
+
+  // Try hex
+  const sigBufHex = Buffer.from(raw, "hex");
+  if (sigBufHex.length > 0 && tryCompare(sigBufHex, Buffer.from(expectedHex, "hex"))) return true;
+
+  // Try base64
+  const sigBufB64 = Buffer.from(raw, "base64");
+  if (sigBufB64.length > 0 && tryCompare(sigBufB64, Buffer.from(expectedBase64, "base64"))) return true;
+
+  return false;
 }
 
 export type MonimeWebhookEvent = {
