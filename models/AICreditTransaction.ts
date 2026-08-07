@@ -2,13 +2,15 @@ import mongoose, { Schema, Model, Types } from "mongoose";
 
 export type AICreditReason =
   | "topup.manual"
+  | "topup.purchase"
   | "spend.tutor"
   | "spend.practice_test"
   | "spend.performance_report"
   | "spend.study_plan";
 
 export const CREDIT_REASON_LABELS: Record<AICreditReason, string> = {
-  "topup.manual": "Top-up (manual)",
+  "topup.manual": "Top-up (admin)",
+  "topup.purchase": "Credit purchase",
   "spend.tutor": "AI Tutor session",
   "spend.practice_test": "Practice test",
   "spend.performance_report": "Performance report",
@@ -41,6 +43,7 @@ const AICreditTransactionSchema = new Schema<IAICreditTransaction>(
       type: String,
       enum: [
         "topup.manual",
+        "topup.purchase",
         "spend.tutor",
         "spend.practice_test",
         "spend.performance_report",

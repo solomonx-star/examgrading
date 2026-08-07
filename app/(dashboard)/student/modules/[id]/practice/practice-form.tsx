@@ -87,8 +87,8 @@ export function PracticeForm({
 
         {!canGenerate ? (
           <p className="rounded-lg bg-secondary/10 px-4 py-2.5 text-sm text-foreground">
-            You need at least 3 credits to generate a practice test. Contact the
-            college office to top up.
+            You need at least 3 credits to generate a practice test.{" "}
+            <a href="/student/credits" className="font-semibold underline">Top up credits →</a>
           </p>
         ) : null}
 

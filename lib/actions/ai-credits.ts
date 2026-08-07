@@ -6,6 +6,10 @@ import { auth } from "@/lib/auth";
 import { requireAdminScope } from "@/lib/admin-scope";
 import { requireActiveStudentAccess } from "@/lib/student-scope";
 import { topUpCredits, getBalance } from "@/lib/ai-credits-service";
+import {
+  createCreditsCheckout,
+  verifyAndCreditPurchase,
+} from "@/lib/credits-payment-service";
 import { audit } from "@/lib/audit";
 import { notify } from "@/lib/notifications";
 import { connectDB } from "@/lib/db";
@@ -103,6 +107,45 @@ export async function getMyBalanceAction(): Promise<{
     return {
       ok: false,
       error: err instanceof Error ? err.message : "Could not fetch balance.",
+    };
+  }
+}
+
+export async function buyCreditPackageAction(packageId: string): Promise<{
+  ok: boolean;
+  checkoutUrl?: string;
+  sessionId?: string;
+  error?: string;
+}> {
+  try {
+    const me = await requireActiveStudentAccess();
+    const result = await createCreditsCheckout({
+      studentId: me.userId,
+      packageId,
+    });
+    return { ok: true, checkoutUrl: result.checkoutUrl, sessionId: result.sessionId };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Could not start checkout.",
+    };
+  }
+}
+
+export async function verifyCreditPurchaseAction(args: {
+  sessionId: string;
+}): Promise<{ ok: boolean; credits?: number; balance?: number; error?: string }> {
+  try {
+    await requireActiveStudentAccess();
+    const result = await verifyAndCreditPurchase(args.sessionId);
+    if (result.ok) {
+      revalidatePath("/student/credits");
+    }
+    return result;
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Verification failed.",
     };
   }
 }

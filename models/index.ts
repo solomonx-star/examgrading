@@ -68,3 +68,6 @@ export type { IPerformanceReport } from "./PerformanceReport";
 
 export { StudyPlan } from "./StudyPlan";
 export type { IStudyPlan, IStudyDay, IStudyPlanInput } from "./StudyPlan";
+
+export { CreditPurchase } from "./CreditPurchase";
+export type { ICreditPurchase } from "./CreditPurchase";

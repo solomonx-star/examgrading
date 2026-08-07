@@ -87,8 +87,8 @@ export function StudyPlanForm({
 
         {!canGenerate ? (
           <p className="rounded-lg bg-secondary/10 px-4 py-2.5 text-sm text-foreground">
-            You need at least 5 credits to generate a study plan. Contact the
-            college office to top up.
+            You need at least 5 credits to generate a study plan.{" "}
+            <a href="/student/credits" className="font-semibold underline">Top up credits →</a>
           </p>
         ) : null}
 

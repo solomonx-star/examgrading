@@ -20,6 +20,7 @@ export async function topUpCredits(args: {
   amount: number;
   note?: string;
   actorId: string | null;
+  reason?: AICreditReason;
 }): Promise<number> {
   if (!mongoose.Types.ObjectId.isValid(args.studentId))
     throw new Error("Invalid student id");
@@ -40,7 +41,7 @@ export async function topUpCredits(args: {
     student: args.studentId,
     delta: args.amount,
     balanceAfter: doc.balance,
-    reason: "topup.manual" satisfies AICreditReason,
+    reason: (args.reason ?? "topup.manual") satisfies AICreditReason,
     note: args.note ?? "",
     actorId: args.actorId
       ? new mongoose.Types.ObjectId(args.actorId)
