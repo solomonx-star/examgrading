@@ -61,7 +61,7 @@ export async function createCreditsCheckout(args: {
     description: `${pkg.credits} AI credits for exam management portal`,
     priceInMinorUnits: pkg.priceInMinorUnits,
     successUrl: `${appUrl()}/api/payment/credits/success`,
-    cancelUrl: `${appUrl()}/student/credits?cancelled=1`,
+    cancelUrl: `${appUrl()}/student/credits/cancel`,
     reference,
     metadata: {
       type: "credits",
