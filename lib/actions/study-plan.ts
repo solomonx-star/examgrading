@@ -23,7 +23,7 @@ const generateSchema = z.object({
 });
 
 export async function generateStudyPlanAction(
-  _prev: { error?: string } | null,
+  _prev: { error: string } | { ok: true } | null,
   formData: FormData,
 ): Promise<{ error: string } | { ok: true }> {
   const me = await requireActiveStudentAccess();

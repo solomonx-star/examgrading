@@ -63,7 +63,7 @@ export async function generatePracticeTestAction(
   for (const t of sampleTests) {
     for (const q of (t.questions ?? []).slice(0, 3)) {
       const opts = (q.options ?? [])
-        .map((o: { letter: string; text: string }) => `${o.letter}. ${o.text}`)
+        .map((o, i) => `${String.fromCharCode(65 + i)}. ${o.text}`)
         .join(" | ");
       styleExamples.push(`- ${q.prompt}  [${opts}]`);
     }
@@ -159,7 +159,7 @@ Respond ONLY with a valid JSON array in this exact format — no prose, no markd
 
 const submitSchema = z.object({
   sessionId: z.string().regex(/^[a-f\d]{24}$/i),
-  answers: z.record(z.string()),
+  answers: z.record(z.string(), z.string()),
 });
 
 export async function submitPracticeTestAction(args: {

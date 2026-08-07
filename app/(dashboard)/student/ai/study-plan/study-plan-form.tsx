@@ -79,7 +79,7 @@ export function StudyPlanForm({
           </p>
         </div>
 
-        {state?.error ? (
+        {state && "error" in state ? (
           <p className="rounded-lg bg-meta-1/10 px-4 py-2.5 text-sm font-medium text-meta-1">
             {state.error}
           </p>
