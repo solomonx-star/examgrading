@@ -65,3 +65,6 @@ export type { IPracticeSession, IPracticeQuestion } from "./PracticeSession";
 
 export { PerformanceReport } from "./PerformanceReport";
 export type { IPerformanceReport } from "./PerformanceReport";
+
+export { StudyPlan } from "./StudyPlan";
+export type { IStudyPlan, IStudyDay, IStudyPlanInput } from "./StudyPlan";
