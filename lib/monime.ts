@@ -53,7 +53,7 @@ export async function createCheckoutSession(
   input: CreateCheckoutInput,
 ): Promise<CheckoutSession> {
   const idempotencyKey = `checkout-${input.reference}`;
-  const res = await fetch(`${BASE_URL}/v1/checkout-sessions`, {
+  const res = await fetch(`${BASE_URL}/v1/checkout_sessions`, {
     method: "POST",
     headers: authHeaders(idempotencyKey),
     body: JSON.stringify({
@@ -95,7 +95,7 @@ export async function createCheckoutSession(
 export async function getCheckoutSession(
   sessionId: string,
 ): Promise<CheckoutSession> {
-  const res = await fetch(`${BASE_URL}/v1/checkout-sessions/${sessionId}`, {
+  const res = await fetch(`${BASE_URL}/v1/checkout_sessions/${sessionId}`, {
     headers: authHeaders(),
   });
   const rawText = await res.text();
