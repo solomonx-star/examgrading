@@ -130,6 +130,12 @@ export default async function StudentOverviewPage() {
   } as const;
 
   const standing = getStanding(cumulative.gpa);
+
+  const gradedCount = currentRows.length;
+  const totalModuleCount = currentModules.length;
+  const gradingPct = totalModuleCount > 0
+    ? Math.round((gradedCount / totalModuleCount) * 100)
+    : null;
   const yearLabel = me.yearLevel ? ` · Year ${me.yearLevel}` : "";
   const programmeLabel = me.programmeName ? ` · ${me.programmeName}` : "";
 
@@ -231,6 +237,34 @@ export default async function StudentOverviewPage() {
               );
             })}
           </ul>
+        </div>
+      )}
+
+      {gradingPct !== null && totalModuleCount > 0 && (
+        <div className="mt-6 rounded-2xl border border-stroke bg-white p-5 shadow-sm">
+          <div className="mb-2 flex items-center justify-between text-sm">
+            <span className="font-semibold text-foreground">Grades released</span>
+            <span className="text-body">
+              {gradedCount} of {totalModuleCount} module{totalModuleCount === 1 ? "" : "s"}
+            </span>
+          </div>
+          <div className="h-2.5 w-full overflow-hidden rounded-full bg-stroke">
+            <div
+              className={`h-full rounded-full transition-all ${
+                gradingPct === 100 ? "bg-meta-3" : "bg-primary"
+              }`}
+              style={{ width: `${gradingPct}%` }}
+            />
+          </div>
+          {gradingPct === 100 ? (
+            <p className="mt-1.5 text-xs text-meta-3">
+              All grades have been published for this semester.
+            </p>
+          ) : (
+            <p className="mt-1.5 text-xs text-body">
+              {totalModuleCount - gradedCount} module{totalModuleCount - gradedCount === 1 ? "" : "s"} pending grading.
+            </p>
+          )}
         </div>
       )}
 
