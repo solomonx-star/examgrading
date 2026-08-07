@@ -154,6 +154,7 @@ export async function adminEditGradeAction(args: {
       title: "Grade updated",
       body: `Your grade for ${mod.code} (${parsed.data.academicYear} · ${parsed.data.semester}) has been updated by an administrator.`,
       link: "/student/grades",
+      channels: ["inapp", "email"],
       metadata: {
         academicYear: parsed.data.academicYear,
         semester: parsed.data.semester,
@@ -284,6 +285,7 @@ export async function publishStudentGradesAction(args: {
     title: "New grades available",
     body: `${result.modifiedCount} of your grade${result.modifiedCount === 1 ? "" : "s"} for ${parsed.data.academicYear} · ${parsed.data.semester} ${result.modifiedCount === 1 ? "has" : "have"} been published.`,
     link: "/student/grades",
+    channels: ["inapp", "email"],
     metadata: {
       count: result.modifiedCount,
       academicYear: parsed.data.academicYear,
@@ -451,6 +453,7 @@ export async function publishCohortGradesAction(args: {
       title: "New grades available",
       body: `Your grades for ${parsed.data.academicYear} · ${parsed.data.semester} have been published.`,
       link: "/student/grades",
+      channels: ["inapp", "email"],
       metadata: {
         academicYear: parsed.data.academicYear,
         semester: parsed.data.semester,

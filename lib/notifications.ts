@@ -2,12 +2,13 @@
 // notification must never block the business action that triggered it.
 //
 // Channels are pluggable: an in-app channel that writes to the Notification
-// collection is wired now; `email` (nodemailer) and `sms` (twilio) are
-// stub transports that will be filled in later. To wire a real sender,
-// replace the entry in TRANSPORTS for that channel.
+// collection is wired now; `email` (nodemailer) is wired via env vars,
+// `sms` (twilio) is a stub for later.
 
 import mongoose from "mongoose";
+import nodemailer from "nodemailer";
 import { connectDB } from "@/lib/db";
+import { User } from "@/models/User";
 import {
   Notification,
   type INotification,
@@ -36,11 +37,44 @@ export type Transport = (ctx: DeliveryContext) => Promise<void>;
 // transports run. We still register it so `deliveredChannels` is consistent.
 const inappTransport: Transport = async () => {};
 
-// Stubs for later. Replace with real implementations (nodemailer / twilio)
-// without touching call sites.
-const emailTransport: Transport = async () => {
-  // TODO: wire up nodemailer here. Look up the user's email by
-  // ctx.payload.userId, then send a templated message.
+function getMailer() {
+  const host = process.env.SMTP_HOST;
+  const port = Number(process.env.SMTP_PORT ?? 587);
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+  const from = process.env.SMTP_FROM ?? "IAM Community College <no-reply@iamcc.edu.sl>";
+  if (!host || !user || !pass) return null;
+  return { transporter: nodemailer.createTransport({ host, port, secure: port === 465, auth: { user, pass } }), from };
+}
+
+const emailTransport: Transport = async (ctx) => {
+  const mailer = getMailer();
+  if (!mailer) return; // SMTP not configured — silently skip
+
+  const user = await User.findById(ctx.payload.userId).select("email name").lean();
+  if (!user?.email) return;
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const link = ctx.payload.link ? `${appUrl}${ctx.payload.link}` : appUrl;
+
+  await mailer.transporter.sendMail({
+    from: mailer.from,
+    to: user.email,
+    subject: ctx.payload.title,
+    text: `${ctx.payload.body}\n\nView: ${link}`,
+    html: `
+      <div style="font-family:sans-serif;max-width:520px;margin:0 auto">
+        <h2 style="color:#1A56A0">${ctx.payload.title}</h2>
+        <p>${ctx.payload.body}</p>
+        <a href="${link}" style="display:inline-block;margin-top:12px;padding:10px 20px;background:#1A56A0;color:#fff;border-radius:8px;text-decoration:none">
+          View on IAM Portal
+        </a>
+        <p style="margin-top:20px;font-size:12px;color:#64748b">
+          IAM Community College · Freetown, Sierra Leone
+        </p>
+      </div>
+    `,
+  });
 };
 
 const smsTransport: Transport = async () => {
