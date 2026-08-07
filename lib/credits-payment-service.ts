@@ -32,11 +32,13 @@ export async function createCreditsCheckout(args: {
 
   await connectDB();
 
+  const purchaseId = new mongoose.Types.ObjectId();
   const purchase = await CreditPurchase.create({
+    _id: purchaseId,
     student: new mongoose.Types.ObjectId(args.studentId),
     credits: pkg.credits,
     amount: pkg.priceInMinorUnits,
-    checkoutSessionId: "pending",
+    checkoutSessionId: `pending-${purchaseId}`,
     status: "pending",
   });
 
