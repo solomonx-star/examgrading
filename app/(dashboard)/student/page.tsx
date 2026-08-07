@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { connectDB } from "@/lib/db";
 import { AcademicPeriod } from "@/models/AcademicPeriod";
+import { GradingRule } from "@/models/GradingRule";
 import { requireActiveStudentAccess } from "@/lib/student-scope";
 import {
   averageGPA,
@@ -18,10 +19,11 @@ export default async function StudentOverviewPage() {
   const me = await requireActiveStudentAccess();
   await connectDB();
 
-  const [modules, current, grades] = await Promise.all([
+  const [modules, current, grades, defaultRule] = await Promise.all([
     getEnrolledModules(me.userId),
     AcademicPeriod.findOne({ isCurrent: true }).lean(),
     getPublishedGradesForStudent(me.userId),
+    GradingRule.findOne({ courseId: null }).select("attendanceThreshold").lean(),
   ]);
 
   const moduleById = new Map(modules.map((m) => [m.id, m]));
@@ -67,6 +69,12 @@ export default async function StudentOverviewPage() {
       ? Math.round((attendancePresent / attendanceTotal) * 100)
       : null;
 
+  const attendanceThreshold = defaultRule?.attendanceThreshold ?? 75;
+  const lowAttendanceModules = currentModules.filter((m) => {
+    const s = attStats.get(m.id);
+    return s && s.total > 0 && s.pct !== null && s.pct < attendanceThreshold;
+  });
+
   const yearLabel = me.yearLevel ? ` · Year ${me.yearLevel}` : "";
   const programmeLabel = me.programmeName ? ` · ${me.programmeName}` : "";
 
@@ -95,6 +103,33 @@ export default async function StudentOverviewPage() {
           hint={`${attendanceTotal} session${attendanceTotal === 1 ? "" : "s"}`}
         />
       </div>
+
+      {lowAttendanceModules.length > 0 && (
+        <div className="mt-4 rounded-2xl border border-meta-1/30 bg-meta-1/5 p-4">
+          <p className="text-sm font-semibold text-meta-1">
+            Attendance warning — below {attendanceThreshold}% required
+          </p>
+          <ul className="mt-2 space-y-1">
+            {lowAttendanceModules.map((m) => {
+              const s = attStats.get(m.id)!;
+              return (
+                <li key={m.id} className="flex items-center justify-between text-sm">
+                  <span className="text-foreground">
+                    <span className="font-mono text-xs">{m.code}</span>
+                    {" — "}{m.name}
+                  </span>
+                  <Link
+                    href={`/student/modules/${m.id}`}
+                    className="ml-4 shrink-0 font-semibold text-meta-1 hover:underline"
+                  >
+                    {s.pct}%
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
 
       <div className="mt-6 rounded-2xl border border-stroke bg-white p-5 shadow-sm">
         <div className="mb-3 flex items-center justify-between">
