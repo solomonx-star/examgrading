@@ -13,13 +13,14 @@ import crypto from "crypto";
 const BASE_URL = process.env.MONIME_BASE_URL || "https://api.monime.io";
 
 function authHeaders(idempotencyKey?: string): HeadersInit {
+  if (!process.env.MONIME_API_KEY) throw new Error("MONIME_API_KEY is not set");
+  if (!process.env.MONIME_SPACE_ID) throw new Error("MONIME_SPACE_ID is not set");
   const headers: Record<string, string> = {
-    Authorization: `Bearer ${process.env.MONIME_API_KEY ?? ""}`,
+    Authorization: `Bearer ${process.env.MONIME_API_KEY}`,
     "Content-Type": "application/json",
+    "Monime-Space-Id": process.env.MONIME_SPACE_ID,
+    "Monime-Version": "caph.2025-08-23",
   };
-  if (process.env.MONIME_SPACE_ID) {
-    headers["Monime-Space-Id"] = process.env.MONIME_SPACE_ID;
-  }
   if (idempotencyKey) headers["Idempotency-Key"] = idempotencyKey;
   return headers;
 }
@@ -53,7 +54,7 @@ export async function createCheckoutSession(
   input: CreateCheckoutInput,
 ): Promise<CheckoutSession> {
   const idempotencyKey = `checkout-${input.reference}`;
-  const res = await fetch(`${BASE_URL}/v1/checkout_sessions`, {
+  const res = await fetch(`${BASE_URL}/v1/checkout-sessions`, {
     method: "POST",
     headers: authHeaders(idempotencyKey),
     body: JSON.stringify({
@@ -95,7 +96,7 @@ export async function createCheckoutSession(
 export async function getCheckoutSession(
   sessionId: string,
 ): Promise<CheckoutSession> {
-  const res = await fetch(`${BASE_URL}/v1/checkout_sessions/${sessionId}`, {
+  const res = await fetch(`${BASE_URL}/v1/checkout-sessions/${sessionId}`, {
     headers: authHeaders(),
   });
   const rawText = await res.text();
