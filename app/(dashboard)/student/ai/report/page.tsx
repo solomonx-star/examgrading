@@ -5,6 +5,7 @@ import { requireActiveStudentAccess } from "@/lib/student-scope";
 import { getBalance } from "@/lib/ai-credits-service";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { ReportPanel } from "./report-panel";
+import { MarkdownContent } from "@/components/ui/MarkdownContent";
 
 export const dynamic = "force-dynamic";
 
@@ -63,13 +64,7 @@ export default async function PerformanceReportPage() {
               })}
             </p>
           </div>
-          <div className="prose prose-sm max-w-none text-sm leading-relaxed text-foreground">
-            {latestReport.content.split("\n\n").map((para, i) => (
-              <p key={i} className="mb-3 last:mb-0">
-                {para}
-              </p>
-            ))}
-          </div>
+          <MarkdownContent content={latestReport.content} />
         </div>
       ) : (
         <div className="rounded-2xl border border-stroke bg-white p-10 text-center text-sm text-body shadow-sm">
@@ -95,12 +90,8 @@ export default async function PerformanceReportPage() {
                     year: "numeric",
                   })}
                 </summary>
-                <div className="border-t border-stroke px-5 py-4 text-sm leading-relaxed text-foreground">
-                  {r.content.split("\n\n").map((para, i) => (
-                    <p key={i} className="mb-3 last:mb-0">
-                      {para}
-                    </p>
-                  ))}
+                <div className="border-t border-stroke px-5 py-4">
+                  <MarkdownContent content={r.content} />
                 </div>
               </details>
             ))}
