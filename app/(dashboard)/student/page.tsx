@@ -136,6 +136,32 @@ export default async function StudentOverviewPage() {
   const gradingPct = totalModuleCount > 0
     ? Math.round((gradedCount / totalModuleCount) * 100)
     : null;
+
+  // Build per-semester GPA trend, oldest → newest
+  const semesterOrder = { First: 1, Second: 2, Summer: 3 } as const;
+  const periodGPAMap = new Map<string, number[]>();
+  for (const r of gradeRows) {
+    const k = `${r.academicYear}::${r.semester}`;
+    const arr = periodGPAMap.get(k) ?? [];
+    if (typeof r.gpa === "number") arr.push(r.gpa);
+    periodGPAMap.set(k, arr);
+  }
+  const gpaTrend = [...periodGPAMap.entries()]
+    .sort((a, b) => {
+      const [ayA, semA] = a[0].split("::");
+      const [ayB, semB] = b[0].split("::");
+      if (ayA !== ayB) return ayA < ayB ? -1 : 1;
+      return (semesterOrder[semA as keyof typeof semesterOrder] ?? 0) -
+        (semesterOrder[semB as keyof typeof semesterOrder] ?? 0);
+    })
+    .map(([key, gpas]) => {
+      const [year, sem] = key.split("::");
+      const avg = gpas.reduce((s, g) => s + g, 0) / gpas.length;
+      return { label: `${year.slice(-2)} ${sem[0]}`, gpa: Math.round(avg * 100) / 100 };
+    });
+
+  const PASS_GPA = 2.9;
+  const MAX_GPA = 4.0;
   const yearLabel = me.yearLevel ? ` · Year ${me.yearLevel}` : "";
   const programmeLabel = me.programmeName ? ` · ${me.programmeName}` : "";
 
@@ -265,6 +291,43 @@ export default async function StudentOverviewPage() {
               {totalModuleCount - gradedCount} module{totalModuleCount - gradedCount === 1 ? "" : "s"} pending grading.
             </p>
           )}
+        </div>
+      )}
+
+      {gpaTrend.length >= 2 && (
+        <div className="mt-6 rounded-2xl border border-stroke bg-white p-5 shadow-sm">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-foreground">GPA trend</h2>
+            <Link href="/student/grades" className="text-xs font-medium text-primary hover:underline">
+              Full chart →
+            </Link>
+          </div>
+          <div className="flex h-28 items-end gap-2">
+            {gpaTrend.map((pt) => {
+              const heightPct = (pt.gpa / MAX_GPA) * 100;
+              const isPass = pt.gpa >= PASS_GPA;
+              return (
+                <div key={pt.label} className="flex flex-1 flex-col items-center gap-1">
+                  <span className="text-[10px] font-semibold text-foreground">{pt.gpa.toFixed(1)}</span>
+                  <div className="w-full rounded-t-md" style={{
+                    height: `${Math.max(heightPct, 4)}%`,
+                    backgroundColor: isPass ? "rgb(16 185 129)" : "rgb(220 53 69)",
+                    maxHeight: "72px",
+                    minHeight: "4px",
+                  }} />
+                  <span className="text-[9px] text-body">{pt.label}</span>
+                </div>
+              );
+            })}
+          </div>
+          <div className="mt-2 flex gap-3 text-[10px] text-body">
+            <span className="flex items-center gap-1">
+              <span className="h-2 w-2 rounded-sm bg-meta-3" /> Pass (≥{PASS_GPA})
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="h-2 w-2 rounded-sm bg-meta-1" /> Below pass
+            </span>
+          </div>
         </div>
       )}
 
