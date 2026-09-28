@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useFormStatus } from "react-dom";
 import posthog from "posthog-js";
 import { signOutAction } from "@/lib/actions/auth";
@@ -98,10 +99,14 @@ export function Header({
 
       <div className="ml-auto flex min-w-0 items-center gap-3">
         {notificationBell}
-        <div className="min-w-0 text-right">
+        <Link
+          href="/profile"
+          className="min-w-0 text-right hover:opacity-75 transition motion-reduce:transition-none"
+          aria-label="Edit profile"
+        >
           <p className="truncate text-sm font-medium text-foreground">{name}</p>
           <p className="hidden truncate text-xs text-body sm:block">{email}</p>
-        </div>
+        </Link>
         <form
           action={signOutAction}
           onSubmit={() => {
