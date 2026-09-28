@@ -2,11 +2,12 @@
 // notification must never block the business action that triggered it.
 //
 // Channels are pluggable: an in-app channel that writes to the Notification
-// collection is wired now; `email` (nodemailer) is wired via env vars,
-// `sms` (twilio) is a stub for later.
+// collection is wired now; `email` (nodemailer) and `sms` (httpSMS) are
+// wired via env vars.
 
 import mongoose from "mongoose";
 import nodemailer from "nodemailer";
+import HttpSms from "httpsms";
 import { connectDB } from "@/lib/db";
 import { appUrl } from "@/lib/app-url";
 import { User } from "@/models/User";
@@ -78,9 +79,26 @@ const emailTransport: Transport = async (ctx) => {
   });
 };
 
-const smsTransport: Transport = async () => {
-  // TODO: wire up Twilio here. Look up the user's phone (add field to User
-  // when ready), then send an SMS.
+function getHttpSmsClient(): { client: HttpSms; from: string } | null {
+  const apiKey = process.env.HTTPSMS_API_KEY;
+  const from = process.env.HTTPSMS_FROM;
+  if (!apiKey || !from) return null;
+  return { client: new HttpSms(apiKey), from };
+}
+
+const smsTransport: Transport = async (ctx) => {
+  const config = getHttpSmsClient();
+  if (!config) return; // httpSMS not configured — silently skip
+
+  const user = await User.findById(ctx.payload.userId).select("phone").lean();
+  if (!user?.phone) return;
+
+  await config.client.messages.postSend({
+    content: `${ctx.payload.title}: ${ctx.payload.body}`,
+    from: config.from,
+    to: user.phone,
+    encrypted: false,
+  });
 };
 
 const TRANSPORTS: Record<NotificationChannel, Transport> = {

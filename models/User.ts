@@ -14,6 +14,7 @@ export interface IUser {
   programmeId?: Types.ObjectId | null;
   yearLevel?: number | null;
   department?: string;
+  phone?: string;
   profileImage?: string;
   isActive: boolean;
   mustChangePassword: boolean;
@@ -56,6 +57,7 @@ const UserSchema = new Schema<IUser, UserModel, IUserMethods>(
     },
     yearLevel: { type: Number, min: 1, max: 4, default: null },
     department: { type: String, trim: true },
+    phone: { type: String, trim: true, sparse: true },
     profileImage: { type: String, trim: true },
     isActive: { type: Boolean, default: true },
     mustChangePassword: { type: Boolean, default: true },
