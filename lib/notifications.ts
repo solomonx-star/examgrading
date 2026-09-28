@@ -2,12 +2,11 @@
 // notification must never block the business action that triggered it.
 //
 // Channels are pluggable: an in-app channel that writes to the Notification
-// collection is wired now; `email` (nodemailer) and `sms` (httpSMS) are
+// collection is wired now; `email` (nodemailer) and `sms` (SMSGatewayHub) are
 // wired via env vars.
 
 import mongoose from "mongoose";
 import nodemailer from "nodemailer";
-import HttpSms from "httpsms";
 import { connectDB } from "@/lib/db";
 import { appUrl } from "@/lib/app-url";
 import { User } from "@/models/User";
@@ -79,26 +78,38 @@ const emailTransport: Transport = async (ctx) => {
   });
 };
 
-function getHttpSmsClient(): { client: HttpSms; from: string } | null {
-  const apiKey = process.env.HTTPSMS_API_KEY;
-  const from = process.env.HTTPSMS_FROM;
-  if (!apiKey || !from) return null;
-  return { client: new HttpSms(apiKey), from };
+function getSmsGatewayConfig(): { token: string; deviceId: string } | null {
+  const token = process.env.SMSGATEWAY_TOKEN;
+  const deviceId = process.env.SMSGATEWAY_DEVICE_ID;
+  if (!token || !deviceId) return null;
+  return { token, deviceId };
 }
 
 const smsTransport: Transport = async (ctx) => {
-  const config = getHttpSmsClient();
-  if (!config) return; // httpSMS not configured — silently skip
+  const config = getSmsGatewayConfig();
+  if (!config) return; // SMSGatewayHub not configured — silently skip
 
   const user = await User.findById(ctx.payload.userId).select("phone").lean();
   if (!user?.phone) return;
 
-  await config.client.messages.postSend({
-    content: `${ctx.payload.title}: ${ctx.payload.body}`,
-    from: config.from,
-    to: user.phone,
-    encrypted: false,
+  const res = await fetch("https://smsgateway.me/api/v4/message/send", {
+    method: "POST",
+    headers: {
+      Authorization: config.token,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify([
+      {
+        device_id: config.deviceId,
+        phone_number: user.phone,
+        message: `${ctx.payload.title}: ${ctx.payload.body}`,
+      },
+    ]),
   });
+
+  if (!res.ok) {
+    throw new Error(`SMSGatewayHub error: ${res.status} ${res.statusText}`);
+  }
 };
 
 const TRANSPORTS: Record<NotificationChannel, Transport> = {

@@ -20,7 +20,6 @@
     "@vercel/blob": "^2.4.0",
     "apexcharts": "^5.12.0",
     "bcryptjs": "^3.0.3",
-    "httpsms": "^0.0.4",
     "lightningcss": "^1.33.0",
     "lucide-react": "^1.16.0",
     "mongoose": "^9.6.2",
