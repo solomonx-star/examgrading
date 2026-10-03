@@ -2,8 +2,8 @@
 // notification must never block the business action that triggered it.
 //
 // Channels are pluggable: an in-app channel that writes to the Notification
-// collection is wired now; `email` (nodemailer) is wired via env vars,
-// `sms` (twilio) is a stub for later.
+// collection is wired now; `email` (nodemailer) and `sms` (SMSGatewayHub) are
+// wired via env vars.
 
 import mongoose from "mongoose";
 import nodemailer from "nodemailer";
@@ -78,9 +78,38 @@ const emailTransport: Transport = async (ctx) => {
   });
 };
 
-const smsTransport: Transport = async () => {
-  // TODO: wire up Twilio here. Look up the user's phone (add field to User
-  // when ready), then send an SMS.
+function getSmsGatewayConfig(): { token: string; deviceId: string } | null {
+  const token = process.env.SMSGATEWAY_TOKEN;
+  const deviceId = process.env.SMSGATEWAY_DEVICE_ID;
+  if (!token || !deviceId) return null;
+  return { token, deviceId };
+}
+
+const smsTransport: Transport = async (ctx) => {
+  const config = getSmsGatewayConfig();
+  if (!config) return; // SMSGatewayHub not configured — silently skip
+
+  const user = await User.findById(ctx.payload.userId).select("phone").lean();
+  if (!user?.phone) return;
+
+  const res = await fetch("https://smsgateway.me/api/v4/message/send", {
+    method: "POST",
+    headers: {
+      Authorization: config.token,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify([
+      {
+        device_id: config.deviceId,
+        phone_number: user.phone,
+        message: `${ctx.payload.title}: ${ctx.payload.body}`,
+      },
+    ]),
+  });
+
+  if (!res.ok) {
+    throw new Error(`SMSGatewayHub error: ${res.status} ${res.statusText}`);
+  }
 };
 
 const TRANSPORTS: Record<NotificationChannel, Transport> = {
